@@ -4,7 +4,6 @@
 #include "input_i2s2_F32.h"
 #include "output_i2s2_F32.h"
 
-#include "filter_ir_cabsim_F32.h"
 #include "filter_tonestackStereo_F32.h"
 
 #include "effect_platereverb_F32.h"
