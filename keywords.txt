@@ -1,0 +1,89 @@
+#library name
+hexefx_audiolib_F32	KEYWORD1
+
+AudioFilterAllpass	KEYWORD1
+init	KEYWORD2
+reset	KEYWORD2
+process	KEYWORD2
+coeff	KEYWORD2
+
+AudioBasicDelay	KEYWORD1
+getTap	KEYWORD2
+write_toOffset	KEYWORD2
+updateIndex	KEYWORD2
+
+AudioBasicLfo	KEYWORD1
+update	KEYWORD2
+get	KEYWORD2
+setRate	KEYWORD2
+setDepth	KEYWORD2
+
+AudioBasicPitch	KEYWORD1
+setPitch	KEYWORD2
+setPitchSemintone	KEYWORD2
+setTone	KEYWORD2
+setMix	KEYWORD2
+
+AudioFilterShelvingLPHP	KEYWORD1
+AudioFilterLP	KEYWORD1
+
+AudioEffectInfinitePhaser_F32	KEYWORD1
+depth	KEYWORD2
+depth_top	KEYWORD2
+depth_btm	KEYWORD2
+lfo	KEYWORD2
+lfo_rate	KEYWORD2
+feedback	KEYWORD2
+stages	KEYWORD2
+set_bypass	KEYWORD2
+get_bypass	KEYWORD2
+tgl_bypass	KEYWORD2
+
+AudioEffectMonoToStereo_F32	KEYWORD1
+stereo_set	KEYWORD2
+pan_set	KEYWORD2
+
+
+AudioEffectPhaserStereo_F32	KEYWORD1
+top	KEYWORD2
+btm	KEYWORD2
+stereo	KEYWORD2
+
+AudioEffectPlateReverb_F32	KEYWORD1
+begin	KEYWORD2
+size	KEYWORD2
+size_get	KEYWORD2
+hidamp	KEYWORD2
+lodamp	KEYWORD2
+lowpass	KEYWORD2
+hipass	KEYWORD2
+diffusion	KEYWORD2
+freeze	KEYWORD2
+freezeBleedIn	KEYWORD2
+wet_level	KEYWORD2
+dry_level	KEYWORD2
+freeze_tgl	KEYWORD2
+freeze_get	KEYWORD2
+chorus	KEYWORD2
+shimmer	KEYWORD2
+shimmerPitch	KEYWORD2
+shimmerPitchSemitones	KEYWORD2
+pitchSemitones	KEYWORD2
+pitchMix	KEYWORD2
+
+AudioFilterTDF2	KEYWORD1
+clear	KEYWORD2
+
+AudioFilterToneStackStereo_F32	KEYWORD1
+setModel	KEYWORD2
+getName	KEYWORD2
+setTone	KEYWORD2
+setBass	KEYWORD2
+setMid	KEYWORD2
+setTreble	KEYWORD2
+
+memcpyInterleave_f32	KEYWORD2
+memcpyDeinterleave_f32	KEYWORD2
+
+AudioInputI2S2_F32	KEYWORD1
+AudioOutputI2S2_F32	KEYWORD1

@@ -1,0 +1,16 @@
+{
+	"name": "hexefx_audiolib_F32",
+	"version": "1.0.0",
+	"keywords": "audio, dsp, teensy",
+	"description": "Audio effect extension for the OpenAudio_ArduinoLibrary",
+	"repository": {
+	  "type": "git",
+	  "url": "https://github.com/hexeguitar/hexefx_audiolib_F32"
+	},
+	"authors": [{
+	  "name": "Piotr Zapart",
+	  "url": "www.hexefx.com"
+	}],
+	"frameworks": "arduino",
+	"platforms": "*"
+  }
