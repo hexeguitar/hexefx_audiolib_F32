@@ -44,14 +44,14 @@ public:
     AudioEffectMonoToStereo_F32();
     ~AudioEffectMonoToStereo_F32();
     virtual void update();
-    void setSpread(float32_t val)
+    void stereo_set(float32_t val)
     { 
         val = constrain(val, 0.0f, 1.0f);
         __disable_irq();
         width = val;
         __enable_irq();
     }
-    void setPan(float32_t val)
+    void pan_set(float32_t val)
     {
         float32_t a, b;
         val = constrain(val, -1.0f, 1.0f);
@@ -62,9 +62,9 @@ public:
         pancos = b;
         __enable_irq();
     }
-    void setBypass(bool state) {bypass = state;}
-    void tglBypass(void) {bypass ^= 1;}
-    bool getBypass(void) { return bypass;}
+    void bypass_set(bool state) {bypass = state;}
+    void bypass_tgl(void) {bypass ^= 1;}
+    bool bypass_get(void) { return bypass;}
 private:
     bool bypass;
     float32_t width;
