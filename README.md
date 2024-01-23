@@ -17,6 +17,13 @@ Stereo plate reverb.
 **AudioFilterToneStackStereo_F32**  
 Stereo guitar tone stack (EQ) emulator.  
 
+**AudioFilterEqualizer_HX_F32**  
+Slightly modified original equalizer component, added bypass system.  
+
+**AudioFilterIRCabsim_F32**  
+Stereo guitar/bass cabinet emulator using low latency uniformly partitioned convolution.  
+10 cabinet impulse responses built in.  
+
 ## I/O  
 **AudioInputI2S2_F32**  
 **AudioOutputI2S2_F32**  
