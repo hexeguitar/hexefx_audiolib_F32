@@ -14,6 +14,16 @@ Mono to stereo converter.
 **AudioEffectPlateReverb_F32**  
 Stereo plate reverb.  
 
+**AudioEffectSpringReverb_F32**  
+Stereo spring reverb emulation.  
+
+**AudioEffectReverbSc_F32**  
+8 delay line stereo FDN reverb, based on work by Sean Costello.  
+Optional PSRAM use for the delay buffers.  
+
+**AudioEffectNoiseGateStereo_F32**  
+Stereo noise gate with external SideChain input.  
+
 **AudioFilterToneStackStereo_F32**  
 Stereo guitar tone stack (EQ) emulator.  
 
@@ -23,6 +33,9 @@ Slightly modified original equalizer component, added bypass system.
 **AudioFilterIRCabsim_F32**  
 Stereo guitar/bass cabinet emulator using low latency uniformly partitioned convolution.  
 10 cabinet impulse responses built in.  
+
+**AudioFilterEqualizer3band_F32**  
+Simple 3 band (Treble, Mid, Bass) equalizer.  
 
 ## I/O  
 **AudioInputI2S2_F32**  
