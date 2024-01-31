@@ -13,7 +13,7 @@ extern const int16_t AudioWaveformSine[257];
 }
 
 /*
- * @brief Basic sin LFO with float oputput
+ * @brief Basic sin LFO with float output
  * 
  */
 class AudioBasicLfo
@@ -26,7 +26,7 @@ public:
 		adder = (uint32_t)(rateHz * rate_mult);
 		
 	}
-	void update()
+	inline void update()
 	{
 		acc += adder; // update the phase acc
 	}
@@ -37,7 +37,7 @@ public:
 	 * @param intOffset pointer top integer value used as address offset
 	 * @param fractOffset pointer to fractional part used for interpolation
 	 */
-	void get(uint8_t phase8bit, uint32_t *intOffset, float *fractOffset)
+	inline void get(uint8_t phase8bit, uint32_t *intOffset, float *fractOffset)
 	{
 		uint32_t idx;
 		uint32_t y0, y1;
@@ -53,11 +53,11 @@ public:
 		*fractOffset = modff((float)y0 / (float)divider, &intOff);
 		*intOffset = (uint32_t)intOff;
 	}
-	void setRate(float rateHz)
+	inline void setRate(float rateHz)
 	{
 		adder = (uint32_t)(rateHz * rate_mult);
 	}
-	void setDepth(uint32_t ampl)
+	inline void setDepth(uint32_t ampl)
 	{
 		divider = (0x7FFF + (ampl>>1)) / ampl;	
 	}

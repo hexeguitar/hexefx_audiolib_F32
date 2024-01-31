@@ -47,7 +47,7 @@ public:
 		lp_gain = constrain(t, 0.0f, 1.0f);
 	}
 
-	float process(float newSample)
+	inline float process(float newSample)
 	{
 		uint32_t idx1, idx2;
 		uint32_t delta, delta_acc;

@@ -44,12 +44,16 @@ const static arm_cfft_instance_f32 *maskS;
 AudioFilterIRCabsim_F32::AudioFilterIRCabsim_F32() : AudioStream_F32(2, inputQueueArray_f32)
 {
 	if (!delay.init()) return;
+	arm_fir_init_f32(&FIR_preL, nfir, (float32_t *)FIRk_preL, &FIRstate[0][0], (uint32_t)block_size);
+	arm_fir_init_f32(&FIR_preR, nfir, (float32_t *)FIRk_preR, &FIRstate[1][0], (uint32_t)block_size);
+	arm_fir_init_f32(&FIR_postL, nfir, (float32_t *)FIRk_postL, &FIRstate[2][0], (uint32_t)block_size);
+	arm_fir_init_f32(&FIR_postR, nfir, (float32_t *)FIRk_postR, &FIRstate[3][0], (uint32_t)block_size);
 	initialized = true;
 }
 
 void AudioFilterIRCabsim_F32::update()
 {
-#if defined(__ARM_ARCH_7EM__)
+#if defined(__IMXRT1062__)
 	if (!initialized) return;
 	audio_block_f32_t *blockL, *blockR;
 
@@ -84,9 +88,11 @@ void AudioFilterIRCabsim_F32::update()
 	}
 	if (doubleTrack)
 	{
+		arm_fir_f32(&FIR_preL, blockL->data, blockL->data, blockL->length);
+		arm_fir_f32(&FIR_preR, blockR->data, blockR->data, blockR->length);
 		// invert phase for channel R
 		arm_scale_f32(blockR->data, -1.0f, blockR->data, blockR->length);
-		// run channelR allpass
+		// run channelR delay
 		for (int i=0; i<blockR->length; i++)
 		{
 			blockR->data[i] = delay.process(blockR->data[i]);
@@ -141,8 +147,16 @@ void AudioFilterIRCabsim_F32::update()
 		blockL->data[i] = accum[i * 2 + 0];
 		blockR->data[i] = accum[i * 2 + 1];
 	}
-	// restore the channel R phase
-	if (doubleTrack)  arm_scale_f32(blockR->data, -1.0f, blockR->data, blockR->length);
+	// apply post EQ, restore the channel R phase, reduce the gain a bit
+	if (doubleTrack)  
+	{
+		
+		arm_fir_f32(&FIR_postL, blockL->data, blockL->data, blockL->length);
+		arm_fir_f32(&FIR_postR, blockR->data, blockR->data, blockR->length);
+		arm_scale_f32(blockR->data, -doubler_gain, blockR->data, blockR->length);
+		arm_scale_f32(blockL->data, doubler_gain, blockL->data, blockL->length);		
+	}
+
 	AudioStream_F32::transmit(blockL, 0);
 	AudioStream_F32::release(blockL);
 	AudioStream_F32::transmit(blockR, 1);
@@ -192,8 +206,6 @@ void AudioFilterIRCabsim_F32::ir_load(uint8_t idx)
 	delay.reset();
 	ir_loaded = 1;
 	AudioInterrupts();
-
-	//Serial.printf("Loaded IR+ %d, part count = %d\r\n", ir_idx, nfor);
 }
 
 void AudioFilterIRCabsim_F32::init_partitioned_filter_masks(const float32_t *irPtr)

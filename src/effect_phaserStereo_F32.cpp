@@ -60,7 +60,7 @@ AudioEffectPhaserStereo_F32::~AudioEffectPhaserStereo_F32()
 
 void AudioEffectPhaserStereo_F32::update()
 {
-#if defined(__ARM_ARCH_7EM__)
+#if defined(__IMXRT1062__)
     audio_block_f32_t *blockL, *blockR; 
     const audio_block_f32_t *blockMod;    // inputs
     bool internalLFO = false;                    // use internal LFO of no modulation input

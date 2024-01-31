@@ -25,7 +25,7 @@ class AudioBasicDelay
 public:
 	~AudioBasicDelay()
 	{
-		free(bf);
+		if(bf) free(bf);
 	}
 	bool init()
 	{
@@ -45,7 +45,7 @@ public:
 	 * @param offset 	delay time 
 	 * @return float 
 	 */
-	float getTap(uint32_t offset, float frac=0.0f)
+	inline float getTap(uint32_t offset, float frac=0.0f)
 	{
 		int32_t read_idx, read_idx_next; 
 		read_idx = idx - offset;
@@ -54,29 +54,48 @@ public:
 		read_idx_next = read_idx - 1;
 		if (read_idx_next < 0) read_idx_next += N;
 		return (bf[read_idx]*(1.0f-frac) + bf[read_idx_next]*frac);
-		//return bf[read_idx];
 	}
+
+    inline const float getTapHermite(float delay) const
+    {
+        int32_t delay_integral   = static_cast<int32_t>(delay);
+        float   delay_fractional = delay - static_cast<float>(delay_integral);
+
+        int32_t     t     = (idx + delay_integral + N);
+        const float     xm1   = bf[(t - 1) % N];
+        const float     x0    = bf[(t) % N];
+        const float     x1    = bf[(t + 1) % N];
+        const float     x2    = bf[(t + 2) % N];
+        const float c     = (x1 - xm1) * 0.5f;
+        const float v     = x0 - x1;
+        const float w     = c + v;
+        const float a     = w + v + (x2 - x0) * 0.5f;
+        const float b_neg = w + a;
+        const float f     = delay_fractional;
+        return (((a * f) - b_neg) * f + c) * f + x0;
+    }
+
 	/**
 	 * @brief read last sample and write a new one
 	 * 
 	 * @param newSample new sample written to the start address
 	 * @return float lase sample read from the end of the buffer
 	 */
-	float process(float newSample)
+	inline float process(float newSample)
 	{
 		float out = bf[idx];
 		bf[idx] = newSample;
 		
 		return out; 
 	}
-	void write_toOffset(float newSample, uint32_t offset)
+	inline void write_toOffset(float newSample, uint32_t offset)
 	{
 		int32_t write_idx;
 		write_idx = idx - offset;
 		if (write_idx < 0) write_idx += N;
 		bf[write_idx] = newSample;
 	}
-	void updateIndex()
+	inline void updateIndex()
 	{
 		if (++idx >= N) idx = 0;
 	}

@@ -118,6 +118,7 @@ bool AudioEffectPlateReverb_F32::begin()
 
 void AudioEffectPlateReverb_F32::update()
 {
+#if defined(__IMXRT1062__)	
 	if (!initialised) return;
     audio_block_f32_t *blockL, *blockR;
 	int16_t i;
@@ -281,4 +282,5 @@ void AudioEffectPlateReverb_F32::update()
 	AudioStream_F32::transmit(blockR, 1);
 	AudioStream_F32::release(blockL);
 	AudioStream_F32::release(blockR);
+	#endif
 }

@@ -18,7 +18,7 @@ class AudioFilterAllpass
 public:
 	~AudioFilterAllpass()
 	{
-		free(bf);
+		if (bf) free(bf);
 	}
 	/**
 	 * @brief Allocate the filter buffer in RAM
@@ -65,11 +65,33 @@ public:
 	{
 		kPtr = coeffPtr;
 	}
+	/**
+	 * @brief get the tap from the delay buffer
+	 * 
+	 * @param offset 	delay time 
+	 * @return float 
+	 */
+	inline float getTap(uint32_t offset, float frac=0.0f)
+	{
+		int32_t read_idx, read_idx_next; 
+		read_idx = idx - offset;
+		if (read_idx < 0) read_idx += N;
+		if (frac == 0.0f) return bf[read_idx];
+		read_idx_next = read_idx - 1;
+		if (read_idx_next < 0) read_idx_next += N;
+		return (bf[read_idx]*(1.0f-frac) + bf[read_idx_next]*frac);
+	}
+	inline void write_toOffset(float newSample, uint32_t offset)
+	{
+		int32_t write_idx;
+		write_idx = idx - offset;
+		if (write_idx < 0) write_idx += N;
+		bf[write_idx] = newSample;
+	}	
 private:
 	float *kPtr;
 	float *bf;
 	uint32_t idx;
-	const uint32_t len = N*sizeof(float);
 };
 
 

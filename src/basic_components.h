@@ -6,6 +6,6 @@
 #include "basic_lfo.h"
 #include "basic_shelvFilter.h"
 #include "basic_pitch.h"
-
+#include "basic_DSPutils.h"
 
 #endif // _BASIC_COMPONENTS_H_

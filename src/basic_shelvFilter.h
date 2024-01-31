@@ -27,7 +27,7 @@ public:
 		lpreg = 0.0f;
 		hpreg = 0.0f;
 	}
-	float process(float input)
+	inline float process(float input)
 	{
 		float tmp1, tmp2;
 		// smoothly update params

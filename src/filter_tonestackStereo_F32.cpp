@@ -43,18 +43,18 @@ AudioFilterToneStackStereo_F32::toneStackParams_t AudioFilterToneStackStereo_F32
 	/* parameter order is R1 - R4, C1 - C3 */
 	/* R1=treble R2=Bass R3=Mid, C1-3 related caps, R4 = parallel resistor */
 	/* { 250000, 1000000, 25000, 56000, 0.25e-9, 20e-9, 20e-9 }, DY */
-	{250 k, 1 M, 25 k, 56 k, 250 pF, 20 nF, 20 nF, "Bassman"},	   /* 59 Bassman 5F6-A */
-	{250 k, 250 k, 4.8 k, 100 k, 250 pF, 100 nF, 47 nF, "Prince"}, /* 64 Princeton AA1164 */
-	{250 k, 1 M, 25 k, 47 k, 600 pF, 20 nF, 20 nF, "Mesa"},		   /* Mesa Dual Rect. 'Orange' */
+	{250 k, 1 M, 25 k, 56 k, 250 pF, 20 nF, 20 nF, 0.7f, "Bassman"},	   /* 59 Bassman 5F6-A */
+	{250 k, 250 k, 4.8 k, 100 k, 250 pF, 100 nF, 47 nF, 1.5f, "Prince"}, /* 64 Princeton AA1164 */
+	{250 k, 1 M, 25 k, 47 k, 600 pF, 20 nF, 20 nF, 0.35f, "Mesa"},		   /* Mesa Dual Rect. 'Orange' */
 	/* Vox -- R3 is fixed (circuit differs anyway) */
-	{1 M, 1 M, 10 k, 100 k, 50 pF, 22 nF, 22 nF, "Vox"}, /* Vox "top boost" */
+	{1 M, 1 M, 10 k, 100 k, 50 pF, 22 nF, 22 nF, 1.0f, "Vox"}, /* Vox "top boost" */
 
-	{220 k, 1 M, 22 k, 33 k, 470 pF, 22 nF, 22 nF, "JCM800"},	/* 59/81 JCM-800 Lead 100 2203 */
-	{250 k, 250 k, 10 k, 100 k, 120 pF, 100 nF, 47 nF, "Twin"}, /* 69 Twin Reverb AA270 */
+	{220 k, 1 M, 22 k, 33 k, 470 pF, 22 nF, 22 nF, 0.35f, "JCM800"},	/* 59/81 JCM-800 Lead 100 2203 */
+	{250 k, 250 k, 10 k, 100 k, 120 pF, 100 nF, 47 nF, 1.6f, "Twin"}, /* 69 Twin Reverb AA270 */
 
-	{500 k, 1 M, 25 k, 47 k, 150 pF, 22 nF, 22 nF, "HK"},	   /* Hughes & Kettner Tube 20 */
-	{250 k, 250 k, 10 k, 100 k, 150 pF, 82 nF, 47 nF, "Jazz"}, /* Roland Jazz Chorus */
-	{250 k, 1 M, 50 k, 33 k, 100 pF, 22 nF, 22 nF, "Pignose"}, /* Pignose G40V */
+	{500 k, 1 M, 25 k, 47 k, 150 pF, 22 nF, 22 nF, 0.35f, "HK"},	   /* Hughes & Kettner Tube 20 */
+	{250 k, 250 k, 10 k, 100 k, 150 pF, 82 nF, 47 nF, 1.4f, "Jazz"}, /* Roland Jazz Chorus */
+	{250 k, 1 M, 50 k, 33 k, 100 pF, 22 nF, 22 nF, 0.40f, "Pignose"}, /* Pignose G40V */
 #undef k
 #undef M
 #undef nF
@@ -87,6 +87,8 @@ void AudioFilterToneStackStereo_F32::setModel(toneStack_presets_e m)
 	float32_t 	C1 = presets[currentModel].C1, \
 				C2 = presets[currentModel].C2, \
 				C3 = presets[currentModel].C3;
+
+	gain_k = presets[currentModel].gain; // gain compensation
 
 	b1t = C1 * R1;
 	b1m = C3 * R3;
@@ -121,12 +123,15 @@ void AudioFilterToneStackStereo_F32::setModel(toneStack_presets_e m)
 
 	filterL.reset();
 	filterR.reset();
+	setTone(bass, mid, treble);
 }
 
 void AudioFilterToneStackStereo_F32::update()
 {
-#if defined(__ARM_ARCH_7EM__)
+#if defined(__IMXRT1062__)
 	audio_block_f32_t *blockL, *blockR; 
+	float32_t g;
+
     blockL = AudioStream_F32::receiveWritable_f32(0);       // audio data
     blockR = AudioStream_F32::receiveWritable_f32(1);       // audio data
     if (!blockL || !blockR)
@@ -145,7 +150,8 @@ void AudioFilterToneStackStereo_F32::update()
 	}
 	filterL.process(blockL->data, blockL->data, blockL->length);
 	filterR.process(blockR->data, blockR->data, blockR->length);
-	if (gain != 1.0f)
+	g = gain * gain_k;
+	if (g != 1.0f)
 	{
 		arm_scale_f32(blockL->data, gain, blockL->data, blockL->length);
 		arm_scale_f32(blockR->data, gain, blockR->data, blockR->length);

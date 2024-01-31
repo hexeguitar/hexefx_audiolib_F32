@@ -163,20 +163,31 @@ public:
 		if (flags.freeze) input_attn = b; // update input gain if freeze is enabled
 	}
 
-    void mix(float wet, float dry=0.0f)
+    void mix(float m)
     {
-		wet_level(wet);
-		dry_level(dry);
-    }
-
+		float32_t dry, wet;
+		m = constrain(m, 0.0f, 1.0f);
+		mix_pwr(m, &wet, &dry);
+		__disable_irq();
+		wet_gain = wet;
+		dry_gain = dry;
+		__enable_irq();
+	}
+	
     void wet_level(float wet)
     {
-        wet_gain = constrain(wet, 0.0f, 6.0f);
+		wet = constrain(wet, 0.0f, 6.0f);
+		__disable_irq();
+		wet_gain = wet;
+		__enable_irq();
     }
 
     void dry_level(float dry)
     {
-        dry_gain = constrain(dry, 0.0f, 1.0f);
+        dry = constrain(dry, 0.0f, 1.0f);
+		__disable_irq();
+		dry_gain = dry;
+		__enable_irq();
     }
 
     bool freeze_tgl() {flags.freeze ^= 1; freeze(flags.freeze); return flags.freeze;}

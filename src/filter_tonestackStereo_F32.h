@@ -43,7 +43,7 @@
 
 typedef enum
 {
-	TONESTACK_OFF,
+	TONESTACK_OFF = 0,
 	TONESTACK_BASSMAN,
 	TONESTACK_PRINCE,
 	TONESTACK_MESA,
@@ -66,6 +66,7 @@ public:
 	{
 		float32_t R1, R2, R3, R4;
 		float32_t C1, C2, C3;
+		float32_t gain;
 		const char *name;
 	} toneStackParams_t;
 	/**
@@ -85,7 +86,11 @@ public:
 	 * 
 	 * @return const char* pointer to the name char array
 	 */
-	const char *getName(){ return presets[currentModel].name;}
+	const char *getName()
+	{ 
+		if (bp) return "OFF";
+		else 	return presets[currentModel].name;
+	}
 
 	/**
 	 * @brief set all 3 parameters at once
@@ -166,7 +171,13 @@ public:
 	 * 
 	 * @param g gain value
 	 */
-	void setGain(float32_t g) {	gain = g;}
+	void setGain(float32_t g) 
+	{	
+		__disable_irq();
+		gain = g;
+		__enable_irq();
+	}
+	bool getBypass() {return bp;}
 
 private:
 	static const uint8_t order = 3;
@@ -181,7 +192,9 @@ private:
 		b3lm, b3m2, b3m, b3t, b3tm, b3tl,
 		a0, a1d, a1m, a1l, a2m, a2lm, a2m2, a2l, a2d,
 		a3lm, a3m2, a3m, a3l, a3d; // intermediate calculations
-	float32_t bass, mid, treble, gain;
+	float32_t bass, mid, treble, gain, gain_k;
+
+
 };
 
 #endif // _FILTER_TONESTACK_F32_H_

@@ -113,7 +113,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * 01.2024 - added bypass subsystem Piotr Zapart www.hexefx.com
+ * 01.2024 - added
  *
  *
  */

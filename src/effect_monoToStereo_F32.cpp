@@ -55,7 +55,7 @@ AudioEffectMonoToStereo_F32::~AudioEffectMonoToStereo_F32()
 
 void AudioEffectMonoToStereo_F32::update()
 {
-#if defined(__ARM_ARCH_7EM__)
+#if defined(__IMXRT1062__)
 
     audio_block_f32_t *blockIn;
     uint16_t i;

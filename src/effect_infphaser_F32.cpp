@@ -47,8 +47,7 @@ AudioEffectInfinitePhaser_F32::~AudioEffectInfinitePhaser_F32()
 
 void AudioEffectInfinitePhaser_F32::update()
 {
-
-#if defined(__ARM_ARCH_7EM__)
+#if defined(__IMXRT1062__)
     audio_block_f32_t *blockIn; 
     uint16_t i = 0;
     float32_t modSig;
