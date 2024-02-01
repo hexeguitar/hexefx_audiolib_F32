@@ -157,7 +157,7 @@ void AudioEffectSpringReverb_F32::update()
 		dryR = blockR->data[i];
 		dry_in = (dryL + dryR) * input_attn;
 
-		mono_in = flt_in.process(dry_in)* (1.0f + in_BassCut_k*-1.5f); // add highpass gain compaensation?
+		mono_in = flt_in.process(dry_in)* (1.0f + in_BassCut_k*-2.5f); // add highpass gain compaensation?
 		acc = lp_dly1.getTap(0) * rv_time;	// get DLY1 output
 		lp_out1 = flt_lp1.process(acc);			// filter it
 
