@@ -19,7 +19,7 @@
  * 
  * @tparam N delay length in samples (float)
  */
-template <int N>
+//template <int N>
 class AudioBasicDelay
 {
 public:
@@ -27,9 +27,12 @@ public:
 	{
 		if(bf) free(bf);
 	}
-	bool init()
+	bool init(uint32_t size_samples,  bool psram=false)
 	{
-		bf = (float *)malloc(N*sizeof(float)); // allocate buffer
+		if(bf) free(bf);
+		size = size_samples;
+		if (psram) bf = (float *)extmem_malloc(size * sizeof(float)); // allocate buffer
+		else bf = (float *)malloc(size * sizeof(float)); // allocate buffer
 		if (!bf) return false;
 		idx = 0;
 		reset();
@@ -37,7 +40,7 @@ public:
 	}
 	void reset()
 	{
-		memset(bf, 0, N*sizeof(float));
+		memset(bf, 0, size * sizeof(float));
 	}
 	/**
 	 * @brief get the tap from the delay buffer
@@ -49,10 +52,10 @@ public:
 	{
 		int32_t read_idx, read_idx_next; 
 		read_idx = idx - offset;
-		if (read_idx < 0) read_idx += N;
+		if (read_idx < 0) read_idx += size;
 		if (frac == 0.0f) return bf[read_idx];
 		read_idx_next = read_idx - 1;
-		if (read_idx_next < 0) read_idx_next += N;
+		if (read_idx_next < 0) read_idx_next += size;
 		return (bf[read_idx]*(1.0f-frac) + bf[read_idx_next]*frac);
 	}
 
@@ -61,11 +64,11 @@ public:
         int32_t delay_integral   = static_cast<int32_t>(delay);
         float   delay_fractional = delay - static_cast<float>(delay_integral);
 
-        int32_t     t     = (idx + delay_integral + N);
-        const float     xm1   = bf[(t - 1) % N];
-        const float     x0    = bf[(t) % N];
-        const float     x1    = bf[(t + 1) % N];
-        const float     x2    = bf[(t + 2) % N];
+        int32_t     t     = (idx + delay_integral + size);
+        const float     xm1   = bf[(t - 1) % size];
+        const float     x0    = bf[(t) % size];
+        const float     x1    = bf[(t + 1) % size];
+        const float     x2    = bf[(t + 2) % size];
         const float c     = (x1 - xm1) * 0.5f;
         const float v     = x0 - x1;
         const float w     = c + v;
@@ -92,14 +95,15 @@ public:
 	{
 		int32_t write_idx;
 		write_idx = idx - offset;
-		if (write_idx < 0) write_idx += N;
+		if (write_idx < 0) write_idx += size;
 		bf[write_idx] = newSample;
 	}
 	inline void updateIndex()
 	{
-		if (++idx >= N) idx = 0;
+		if (++idx >= size) idx = 0;
 	}
 private:
+	int32_t size; 
 	float *bf;
 	int32_t idx;
 };

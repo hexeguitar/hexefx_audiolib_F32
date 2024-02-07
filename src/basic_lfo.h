@@ -5,7 +5,10 @@
 #include "AudioStream_F32.h"
 
 #define BASIC_LFO_PHASE_0	(0)
+#define BASIC_LFO_PHASE_45	(32)
+#define BASIC_LFO_PHASE_60	(43)
 #define BASIC_LFO_PHASE_90	(64)
+#define BASIC_LFO_PHASE_120	(85)
 #define BASIC_LFO_PHASE_180	(128)
 
 extern "C" {
@@ -22,7 +25,13 @@ public:
 	AudioBasicLfo(float rateHz, uint32_t ampl)
 	{
 		acc = 0;
-		divider = (0x7FFF + (ampl>>1)) / ampl;	
+		if (!ampl) 
+		{
+			state = false;
+			divider = 0x8000;
+		}
+		else divider = (0x7FFF + (ampl>>1)) / ampl;	
+		state = true;
 		adder = (uint32_t)(rateHz * rate_mult);
 		
 	}
@@ -39,6 +48,12 @@ public:
 	 */
 	inline void get(uint8_t phase8bit, uint32_t *intOffset, float *fractOffset)
 	{
+		if (!state) // lfo off
+		{
+			*intOffset = 0;
+			*fractOffset = 0.0f;
+			return;
+		}
 		uint32_t idx;
 		uint32_t y0, y1;
 		uint64_t y;
@@ -59,9 +74,16 @@ public:
 	}
 	inline void setDepth(uint32_t ampl)
 	{
+		if (!ampl) 
+		{
+			state = false; 
+			return; // do not update the divider
+		}
+		state = true;
 		divider = (0x7FFF + (ampl>>1)) / ampl;	
 	}
 private:
+	bool state = true; 
 	uint32_t acc;
 	uint32_t adder;
 	int32_t divider = 1;

@@ -82,6 +82,33 @@ setBass	KEYWORD2
 setMid	KEYWORD2
 setTreble	KEYWORD2
 
+AudioEffectNoiseGateStereo_F32	KEYWORD1
+
+AudioFilterEqualizer3band_F32	KEYWORD1
+setBands	KEYWORD2
+treble	KEYWORD2
+mid	KEYWORD2
+bass	KEYWORD2
+set	KEYWORD2
+
+AudioEffectSpringReverb_F32	KEYWORD1
+time	KEYWORD2
+treble_cut	KEYWORD2
+bass_cut	KEYWORD2
+
+AudioEffectDelayStereo_F32	KEYWORD1
+delay	KEYWORD2
+feedback	KEYWORD2
+inertia	
+mod_rateHz	KEYWORD2
+mod_rate	KEYWORD2
+mod_depth	KEYWORD2
+tap_tempo	KEYWORD2
+
+AudioEffectReverbSc_F32	KEYWORD1
+lowpass	KEYWORD2
+
+
 memcpyInterleave_f32	KEYWORD2
 memcpyDeinterleave_f32	KEYWORD2
 

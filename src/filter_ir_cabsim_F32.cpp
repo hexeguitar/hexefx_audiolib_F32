@@ -21,29 +21,20 @@
  * If not, see <https://www.gnu.org/licenses/>."
  */
 #include "filter_ir_cabsim_F32.h"
-#include <arm_const_structs.h>
 #include "HxFx_memcpy.h"
-
-float32_t DMAMEM maskgen[IR_FFT_LENGTH * 2];
-float32_t DMAMEM fmask[IR_NFORMAX][IR_FFT_LENGTH * 2]; //
-float32_t DMAMEM fftin[IR_FFT_LENGTH * 2];
-float32_t DMAMEM accum[IR_FFT_LENGTH * 2];
-
-float32_t DMAMEM last_sample_buffer_L[IR_BUFFER_SIZE * IR_N_B];
-float32_t DMAMEM last_sample_buffer_R[IR_BUFFER_SIZE * IR_N_B];
-float32_t DMAMEM fftout[IR_NFORMAX][IR_FFT_LENGTH * 2];
-float32_t DMAMEM ac2[512];
-
-const static arm_cfft_instance_f32 *S;
-// complex iFFT with the new library CMSIS V4.5
-const static arm_cfft_instance_f32 *iS;
-// FFT instance for direct calculation of the filter mask
-// from the impulse response of the FIR - the coefficients
-const static arm_cfft_instance_f32 *maskS;
 
 AudioFilterIRCabsim_F32::AudioFilterIRCabsim_F32() : AudioStream_F32(2, inputQueueArray_f32)
 {
-	if (!delay.init()) return;
+	if (!delay.init(delay_l)) return;
+	last_sample_buffer_L = (float32_t*)malloc(IR_BUFFER_SIZE * IR_N_B * sizeof(float32_t));
+	last_sample_buffer_R = (float32_t*)malloc(IR_BUFFER_SIZE * IR_N_B * sizeof(float32_t));
+	maskgen = (float32_t*)malloc(IR_FFT_LENGTH * 2 * sizeof(float32_t));
+	fftout = (float32_t*)malloc(IR_NFORMAX * IR_FFT_LENGTH * 2 * sizeof(float32_t));
+	if (!last_sample_buffer_L || !last_sample_buffer_R || !maskgen || !fftout) return;
+
+	memset(maskgen, 0, IR_FFT_LENGTH * 2 * sizeof(float32_t));
+	memset(fftout, 0, IR_NFORMAX * IR_FFT_LENGTH * 2 * sizeof(float32_t));
+
 	arm_fir_init_f32(&FIR_preL, nfir, (float32_t *)FIRk_preL, &FIRstate[0][0], (uint32_t)block_size);
 	arm_fir_init_f32(&FIR_preR, nfir, (float32_t *)FIRk_preR, &FIRstate[1][0], (uint32_t)block_size);
 	arm_fir_init_f32(&FIR_postL, nfir, (float32_t *)FIRk_postL, &FIRstate[2][0], (uint32_t)block_size);
@@ -69,17 +60,15 @@ void AudioFilterIRCabsim_F32::update()
 	if (!ir_loaded) // ir not loaded yet or bypass mode
 	{
 		// bypass clean signal
-		// TODO: Add bypass signal gain stage to match the processed signal volume
 		AudioStream_F32::transmit(blockL, 0);
 		AudioStream_F32::release(blockL);
 		AudioStream_F32::transmit(blockR, 1);
 		AudioStream_F32::release(blockR);
 		return;
 	}
-
 	if (first_block) // fill real & imaginaries with zeros for the first BLOCKSIZE samples
 	{
-		arm_fill_f32(0.0f, fftin, blockL->length * 4);
+		memset(&fftin[0], 0, blockL->length*sizeof(float32_t)*4);
 		first_block = 0;
 	}
 	else
@@ -119,7 +108,7 @@ void AudioFilterIRCabsim_F32::update()
 		// do a complex MAC (multiply/accumulate)
 		arm_cmplx_mult_cmplx_f32(ptr1, ptr2, ac2, 256); // This is the complex multiply
 		for (int q = 0; q < 512; q = q + 8)
-		{ // this is the accumulate
+		{ 
 			accum[q] += ac2[q];
 			accum[q + 1] += ac2[q + 1];
 			accum[q + 2] += ac2[q + 2];
@@ -130,10 +119,7 @@ void AudioFilterIRCabsim_F32::update()
 			accum[q + 7] += ac2[q + 7];
 		}
 		k--;
-		if (k < 0)
-		{
-			k = nfor - 1;
-		}
+		if (k < 0)  k = nfor - 1;
 		k512 = k * 512;
 		j512 += 512;
 	} // end np loop
@@ -153,10 +139,9 @@ void AudioFilterIRCabsim_F32::update()
 		
 		arm_fir_f32(&FIR_postL, blockL->data, blockL->data, blockL->length);
 		arm_fir_f32(&FIR_postR, blockR->data, blockR->data, blockR->length);
-		arm_scale_f32(blockR->data, -doubler_gain, blockR->data, blockR->length);
-		arm_scale_f32(blockL->data, doubler_gain, blockL->data, blockL->length);		
+		arm_scale_f32(blockR->data, -doubler_gainR, blockR->data, blockR->length);
+		arm_scale_f32(blockL->data, doubler_gainL, blockL->data, blockL->length);		
 	}
-
 	AudioStream_F32::transmit(blockL, 0);
 	AudioStream_F32::release(blockL);
 	AudioStream_F32::transmit(blockR, 1);
@@ -173,7 +158,6 @@ void AudioFilterIRCabsim_F32::ir_register(const float32_t *irPtr, uint8_t positi
 
 void AudioFilterIRCabsim_F32::ir_load(uint8_t idx)
 {
-	
 	const float32_t *newIrPtr = NULL;
 	uint32_t nc = 0;
 
@@ -193,14 +177,12 @@ void AudioFilterIRCabsim_F32::ir_load(uint8_t idx)
 	nc = newIrPtr[0];
 	nfor = nc / IR_BUFFER_SIZE;
 	if (nfor > nforMax) nfor = nforMax;
+	ir_length_ms =  (1000.0f * nfor * (float32_t)AUDIO_BLOCK_SAMPLES) / AUDIO_SAMPLE_RATE_EXACT;
 	ptr_fmask = &fmask[0][0];
-	ptr_fftout = &fftout[0][0];
+	ptr_fftout = &fftout[0];
 	memset(ptr_fftout, 0, nfor*512*4);  // clear fftout array
 	memset(fftin, 0,  512 * 4);  // clear fftin array
 
-	S = &arm_cfft_sR_f32_len256;
-	iS = &arm_cfft_sR_f32_len256;
-	maskS = &arm_cfft_sR_f32_len256;
 	init_partitioned_filter_masks(newIrPtr);	
 
 	delay.reset();
@@ -210,9 +192,11 @@ void AudioFilterIRCabsim_F32::ir_load(uint8_t idx)
 
 void AudioFilterIRCabsim_F32::init_partitioned_filter_masks(const float32_t *irPtr)
 {
+	const static arm_cfft_instance_f32 *maskS;
+	maskS = &arm_cfft_sR_f32_len256;
 	for (uint32_t j = 0; j < nfor; j++)
 	{
-		arm_fill_f32(0.0f, maskgen, IR_BUFFER_SIZE * 4);
+		memset(&maskgen[0], 0, IR_BUFFER_SIZE * 4 *sizeof(float32_t));
 		for (unsigned i = 0; i < IR_BUFFER_SIZE; i++)
 		{
 			maskgen[i * 2 + IR_BUFFER_SIZE * 2] = irPtr[2 + i + j * IR_BUFFER_SIZE] * irPtr[1]; // added gain!

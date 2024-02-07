@@ -160,8 +160,8 @@ private:
     float32_t *sp_chrp_alp3_buf;
     float32_t *sp_chrp_alp4_buf;
 
-	AudioBasicDelay<SPRVB_DLY1_LEN> lp_dly1;
-	AudioBasicDelay<SPRVB_DLY2_LEN> lp_dly2;
+	AudioBasicDelay lp_dly1;
+	AudioBasicDelay lp_dly2;
 
 	float32_t in_TrebleCut_k;
 	float32_t in_BassCut_k;

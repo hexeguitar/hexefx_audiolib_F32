@@ -17,6 +17,6 @@
 #include "effect_infphaser_F32.h"
 #include "effect_phaserStereo_F32.h"
 #include "effect_noiseGateStereo_F32.h"
-
+#include "effect_delaystereo.h"
 
 #endif // _HEXEFX_AUDIO_H

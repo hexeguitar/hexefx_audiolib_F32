@@ -74,10 +74,10 @@ bool AudioEffectPlateReverb_F32::begin()
 
     lp_allp_out = 0.0f;
 
-	if(!lp_dly1.init()) return false;
-	if(!lp_dly2.init()) return false;
-	if(!lp_dly3.init()) return false;
-	if(!lp_dly4.init()) return false;
+	if(!lp_dly1.init(LP_DLY1_BUF_LEN)) return false;
+	if(!lp_dly2.init(LP_DLY2_BUF_LEN)) return false;
+	if(!lp_dly3.init(LP_DLY3_BUF_LEN)) return false;
+	if(!lp_dly4.init(LP_DLY4_BUF_LEN)) return false;
 
     lp_hidamp_k = 1.0f;
     lp_lodamp_k = 0.0f;
@@ -164,10 +164,11 @@ void AudioEffectPlateReverb_F32::update()
 			AudioStream_F32::transmit(blockR, 1);
 			AudioStream_F32::release(blockL);
 			AudioStream_F32::release(blockR);
+			return;
 		}
 		blockL = AudioStream_F32::allocate_f32();
 		if (!blockL) return;
-		arm_fill_f32(0.0f, blockL->data, blockL->length);
+		memset(&blockL->data[0], 0, blockL->length*sizeof(float32_t));
 		AudioStream_F32::transmit(blockL, 0);	
 		AudioStream_F32::transmit(blockL, 1);
 		AudioStream_F32::release(blockL);	

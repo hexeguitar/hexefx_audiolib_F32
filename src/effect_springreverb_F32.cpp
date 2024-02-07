@@ -52,8 +52,8 @@ AudioEffectSpringReverb_F32::AudioEffectSpringReverb_F32() : AudioStream_F32(2, 
 	if(!sp_lp_allp2b.init(&in_allp_k)) memOK = false;
 	if(!sp_lp_allp2c.init(&in_allp_k)) memOK = false;
 	if(!sp_lp_allp2d.init(&in_allp_k)) memOK = false;	
-	if(!lp_dly1.init()) memOK = false;
-	if(!lp_dly2.init()) memOK = false;
+	if(!lp_dly1.init(SPRVB_DLY1_LEN)) memOK = false;
+	if(!lp_dly2.init(SPRVB_DLY2_LEN)) memOK = false;
 	// chirp allpass chain
 	sp_chrp_alp1_buf = (float *)malloc(SPRVB_CHIRP_AMNT*SPRVB_CHIRP1_LEN*sizeof(float));
 	sp_chrp_alp2_buf = (float *)malloc(SPRVB_CHIRP_AMNT*SPRVB_CHIRP2_LEN*sizeof(float));
@@ -63,12 +63,10 @@ AudioEffectSpringReverb_F32::AudioEffectSpringReverb_F32() : AudioStream_F32(2, 
 	if (!sp_chrp_alp2_buf) memOK = false;
 	if (!sp_chrp_alp3_buf) memOK = false;
 	if (!sp_chrp_alp4_buf) memOK = false;
-
-	memset(sp_chrp_alp1_buf, 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP1_LEN*sizeof(float));
-	memset(sp_chrp_alp2_buf, 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP2_LEN*sizeof(float));
-	memset(sp_chrp_alp3_buf, 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP3_LEN*sizeof(float));
-	memset(sp_chrp_alp4_buf, 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP4_LEN*sizeof(float));
-
+	memset(&sp_chrp_alp1_buf[0], 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP1_LEN*sizeof(float));
+	memset(&sp_chrp_alp2_buf[0], 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP2_LEN*sizeof(float));
+	memset(&sp_chrp_alp3_buf[0], 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP3_LEN*sizeof(float));
+	memset(&sp_chrp_alp4_buf[0], 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP4_LEN*sizeof(float));
 	in_BassCut_k = 0.0f;
 	in_TrebleCut_k = 0.95f;
 	lp_BassCut_k = 0.0f;
@@ -108,10 +106,10 @@ void AudioEffectSpringReverb_F32::update()
 			sp_lp_allp2d.reset();
 			lp_dly1.reset();
 			lp_dly2.reset();
-			memset(sp_chrp_alp1_buf, 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP1_LEN*sizeof(float));
-			memset(sp_chrp_alp2_buf, 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP2_LEN*sizeof(float));
-			memset(sp_chrp_alp3_buf, 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP3_LEN*sizeof(float));
-			memset(sp_chrp_alp4_buf, 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP4_LEN*sizeof(float));			
+			memset(&sp_chrp_alp1_buf[0], 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP1_LEN*sizeof(float));
+			memset(&sp_chrp_alp2_buf[0], 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP2_LEN*sizeof(float));
+			memset(&sp_chrp_alp3_buf[0], 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP3_LEN*sizeof(float));
+			memset(&sp_chrp_alp4_buf[0], 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP4_LEN*sizeof(float));			
 			cleanup_done = true;
 		}
 
@@ -129,10 +127,11 @@ void AudioEffectSpringReverb_F32::update()
 			AudioStream_F32::transmit(blockR, 1);
 			AudioStream_F32::release(blockL);
 			AudioStream_F32::release(blockR);
+			return;
 		}
 		blockL = AudioStream_F32::allocate_f32();
 		if (!blockL) return;
-		arm_fill_f32(0.0f, blockL->data, blockL->length);
+		memset(&blockL->data[0], 0, blockL->length*sizeof(float32_t));
 		AudioStream_F32::transmit(blockL, 0);	
 		AudioStream_F32::transmit(blockL, 1);
 		AudioStream_F32::release(blockL);	

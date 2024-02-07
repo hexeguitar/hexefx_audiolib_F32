@@ -1,4 +1,4 @@
-/*  Stereo plate reverb for ESP32
+/*  Stereo plate reverb for Teensy 4
  *
  *  Author: Piotr Zapart
  *          www.hexefx.com
@@ -265,7 +265,7 @@ private:
     {
         unsigned bypass:            1;
         unsigned freeze:            1;
-        unsigned shimmer:           1; // maybe will be added at some point
+        unsigned shimmer:           1;
         unsigned cleanup_done:      1;
     }flags;
     audio_block_f32_t *inputQueueArray_f32[2];
@@ -331,10 +331,10 @@ private:
     float loop_allp_k;         // loop allpass coeff (default 0.6)
     float lp_allp_out;
 
-	AudioBasicDelay<LP_DLY1_BUF_LEN> lp_dly1;
-	AudioBasicDelay<LP_DLY2_BUF_LEN> lp_dly2;
-	AudioBasicDelay<LP_DLY3_BUF_LEN> lp_dly3;
-	AudioBasicDelay<LP_DLY4_BUF_LEN> lp_dly4;
+	AudioBasicDelay lp_dly1;
+	AudioBasicDelay lp_dly2;
+	AudioBasicDelay lp_dly3;
+	AudioBasicDelay lp_dly4;
 
     float lp_hidamp_k, lp_hidamp_k_tmp;       // loop high band damping coeff
     float lp_lodamp_k, lp_lodamp_k_tmp;       // loop low band damping coeff

@@ -32,9 +32,11 @@
 #include "basic_allpass.h"
 #include "basic_delay.h"
 #include "basic_shelvFilter.h"
+#include <arm_const_structs.h>
+
 
 #define IR_BUFFER_SIZE  128
-#define IR_NFORMAX      (8192 / IR_BUFFER_SIZE)
+#define IR_NFORMAX      (2048 / IR_BUFFER_SIZE)
 #define IR_FFT_LENGTH   (2 * IR_BUFFER_SIZE)
 #define IR_N_B          (1)
 #define IR_MAX_REG_NUM  11       // max number of registered IRs
@@ -47,11 +49,9 @@ public:
     void ir_register(const float32_t *irPtr, uint8_t position);
     void ir_load(uint8_t idx);
     uint8_t ir_get(void) {return ir_idx;} 
-    float ir_get_len_ms(void)
+    float32_t ir_get_len_ms(void)
     {
-        float32_t slen = 0.0f;
-        if (irPtrTable[ir_idx])      slen = irPtrTable[ir_idx][0];
-        return (slen / AUDIO_SAMPLE_RATE_EXACT)*1000.0f;
+		return ir_length_ms;
     }
 	void doubler_set(bool s)
 	{
@@ -91,19 +91,31 @@ private:
 
     int buffidx = 0;
     int k = 0;
+	float32_t fmask[IR_NFORMAX][IR_FFT_LENGTH * 2];
+	float32_t ac2[512];
+	float32_t accum[IR_FFT_LENGTH * 2];
+	float32_t fftin[IR_FFT_LENGTH * 2];
+	float32_t* last_sample_buffer_R;
+	float32_t* last_sample_buffer_L;
+	float32_t* maskgen;
+	float32_t* fftout;
 
-	float32_t *ptr_fftout;
-	float32_t *ptr_fmask;
+	float32_t* ptr_fftout;
+	float32_t* ptr_fmask;
 	float32_t* ptr1;
 	float32_t* ptr2;
 	int k512;
 	int j512;
+
+	const arm_cfft_instance_f32 *S = &arm_cfft_sR_f32_len256;
+	const arm_cfft_instance_f32 *iS = &arm_cfft_sR_f32_len256;
 	
     uint32_t N_BLOCKS = IR_N_B;
 
 	static const uint32_t delay_l = AUDIO_SAMPLE_RATE * 0.01277f; 	//15ms delay
-	AudioBasicDelay<delay_l> delay;
+	AudioBasicDelay delay;
 
+	float32_t ir_length_ms = 0.0f;
 	// default IR table, use NULL for bypass
     const float32_t *irPtrTable[IR_MAX_REG_NUM] = 
     {
@@ -112,9 +124,9 @@ private:
     void init_partitioned_filter_masks(const float32_t *irPtr);
 	bool initialized = false;
 	
-
 	// stereo doubler
-	static constexpr float32_t doubler_gain = 0.65f;
+	static constexpr float32_t doubler_gainL = 0.55f;
+	static constexpr float32_t doubler_gainR = 0.65f;
 	bool doubleTrack = false;
 	static const uint8_t nfir = 30;	// fir taps
 	arm_fir_instance_f32 FIR_preL, FIR_preR, FIR_postL, FIR_postR;

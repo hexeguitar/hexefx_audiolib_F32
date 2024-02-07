@@ -19,7 +19,7 @@
 
 #ifndef _EFFECT_REVERBSC_F32_H_
 #define _EFFECT_REVERBSC_F32_H_
-
+	
 #include <Arduino.h>
 #include "Audio.h"
 #include "AudioStream.h"
@@ -137,7 +137,7 @@ private:
     float32_t damp_fact_, damp_fact_tmp;
     bool initialised = false;
     ReverbScDl_t delay_lines_[8];
-    float32_t      *aux_; // main delay line storage buffer, placed either in RAM2 or PSRAM
+    float32_t *aux_; // main delay line storage buffer, placed either in RAM2 or PSRAM
 	float32_t dry_gain = 0.5f;
 	float32_t wet_gain = 0.5f;
 

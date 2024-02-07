@@ -21,6 +21,9 @@ Stereo spring reverb emulation.
 8 delay line stereo FDN reverb, based on work by Sean Costello.  
 Optional PSRAM use for the delay buffers.  
 
+**AudioEffectDelayStereo_F32**  
+Versatile stereo ping-pong delay with modulation.  
+
 **AudioEffectNoiseGateStereo_F32**  
 Stereo noise gate with external SideChain input.  
 
@@ -37,6 +40,10 @@ Stereo guitar/bass cabinet emulator using low latency uniformly partitioned conv
 **AudioFilterEqualizer3band_F32**  
 Simple 3 band (Treble, Mid, Bass) equalizer.  
 
+**AudioEffectGainStereo_F32**  
+Stereo gain control (volume etc.)  
+
+**
 ## I/O  
 **AudioInputI2S2_F32**  
 **AudioOutputI2S2_F32**  
