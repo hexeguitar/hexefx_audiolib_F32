@@ -43,7 +43,7 @@ Simple 3 band (Treble, Mid, Bass) equalizer.
 **AudioEffectGainStereo_F32**  
 Stereo gain control (volume etc.)  
 
-**
+
 ## I/O  
 **AudioInputI2S2_F32**  
 **AudioOutputI2S2_F32**  
