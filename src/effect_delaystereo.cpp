@@ -166,8 +166,6 @@ void AudioEffectDelayStereo_F32::update()
 		if (acc2 < 0.0f) mod_fr[3] += acc2;		
 
 		float32_t idx = dly_time + mod_fr[0];
-		if (idx > maxV) maxV = idx;
-		if (idx < minV) minV = idx;
 
 		acc1 = dly0b.getTapHermite(dly_time+mod_fr[0]);
 		outR = acc1 * 0.6f;
