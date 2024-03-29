@@ -30,9 +30,10 @@ public:
 	bool init(uint32_t size_samples,  bool psram=false)
 	{
 		if(bf) free(bf);
+		use_psram = psram;
 		size = size_samples;
-		if (psram) bf = (float *)extmem_malloc(size * sizeof(float)); // allocate buffer
-		else bf = (float *)malloc(size * sizeof(float)); // allocate buffer
+		if (use_psram) 	bf = (float *)extmem_malloc(size * sizeof(float)); 	// allocate buffer in PSRAM
+		else 			bf = (float *)malloc(size * sizeof(float)); 		// allocate buffer in DMARAM
 		if (!bf) return false;
 		idx = 0;
 		reset();
@@ -40,7 +41,17 @@ public:
 	}
 	void reset()
 	{
-		memset(bf, 0, size * sizeof(float));
+		memset(bf, 0, size * sizeof(float32_t));
+		if (use_psram) arm_dcache_flush_delete(&bf[0], size * sizeof(float32_t));
+	}
+	void reset(uint32_t startAddr, uint32_t endAddr)
+	{
+		if (startAddr > endAddr) return;
+		if (endAddr > (uint32_t)size) endAddr = size;
+		float32_t* memPtr = &bf[0]+startAddr;
+		uint32_t l = (endAddr - startAddr) * sizeof(float32_t);
+		memset(memPtr, 0, l);
+		if (use_psram) arm_dcache_flush_delete(memPtr, l);
 	}
 	/**
 	 * @brief get the tap from the delay buffer
@@ -106,6 +117,7 @@ private:
 	int32_t size; 
 	float *bf;
 	int32_t idx;
+	bool use_psram = false;
 };
 
 #endif // _BASIC_DELAY_H_

@@ -8,12 +8,8 @@
  * Year: 1999, 2005
  * Ported to soundpipe by:  Paul Batchelor
  * 
- * Ported to Teensy4 and OpenAudio_ArduinoLibrary: 
+ * Ported/upgraded to Teensy4 and OpenAudio_ArduinoLibrary: 
  * 01.2024 Piotr Zapart www.hexefx.com 
- * 
- * Fixes, changes:
- * - In the original code the reverb level is affected by the feedback control, fixed
- * - Optional 
  * 
  */
 
@@ -26,6 +22,8 @@
 #include "AudioStream_F32.h"
 #include "arm_math.h"
 #include "basic_DSPutils.h"
+
+#define REVERBSC_DLYBUF_SIZE 98936
 
 class AudioEffectReverbSc_F32 : public AudioStream_F32
 {
@@ -57,7 +55,7 @@ public:
 		feedback_tmp = feedb;
 		inGain = map(feedb, 0.1f, feedb_max, 0.5f, 0.2f);
 		__disable_irq();
-		input_gain = inGain;
+		input_gain_set = inGain;
 		feedback_ = feedb;
 		__enable_irq();
 	}
@@ -89,44 +87,70 @@ public:
 
     void wet_level(float32_t wet)
     {
-        wet_gain = constrain(wet, 0.0f, 1.0f);
+		wet = constrain(wet, 0.0f, 1.0f);
+		__disable_irq();
+        wet_gain = wet;
+		__enable_irq();
     }
 
     void dry_level(float32_t dry)
     {
-        dry_gain = constrain(dry, 0.0f, 1.0f);
+		dry = constrain(dry, 0.0f, 1.0f);
+		__disable_irq();
+        dry_gain = dry;
+		__enable_irq();
     }	
 	void freeze(bool state);
-    bool freeze_tgl() {flags.freeze ^= 1; freeze(flags.freeze); return flags.freeze;}
+    bool freeze_tgl() {freeze(flags.freeze^1); return flags.freeze;}
     bool freeze_get() {return flags.freeze;}
-    
+ 	typedef enum
+	{
+		BYPASS_MODE_PASS,		// pass the input signal to the output
+		BYPASS_MODE_OFF,		// mute the output
+		BYPASS_MODE_TRAILS		// mutes the input only
+	}bypass_mode_t;
+	void bypass_setMode(bypass_mode_t m)
+	{
+		if (m <= BYPASS_MODE_TRAILS) 
+		{
+			__disable_irq();
+			bp_mode = m;
+			__enable_irq();
+		}
+	}
+	bypass_mode_t bypass_geMode() {return bp_mode;}
     bool bypass_get(void) {return flags.bypass;}
     void bypass_set(bool state) 
     {
+		if (flags.mem_fail) return;
         flags.bypass = state;
-        if (state) freeze(false);       // disable freeze in bypass mode
+        if (state) 
+		{
+			if (bp_mode == BYPASS_MODE_TRAILS) input_gain_set = 0.0f;
+			freeze(false);       // disable freeze in bypass mode
+			__disable_irq();
+			memCleanupStart = 0;
+			memCleanupEnd = memCleanupStep;
+			__enable_irq();
+		}
+		else input_gain_set = input_gain_tmp;
     }
     bool bypass_tgl(void) 
     {
-        flags.bypass ^= 1; 
-        if (flags.bypass) freeze(false);       // disable freeze in bypass mode
+		bypass_set(flags.bypass^1);
         return flags.bypass;
     }
-
-	uint32_t getBfAddr()
-	{
-		float32_t *addr = aux_;
-		return (uint32_t)addr;
-	}
 
 private:
     struct flags_t
     {
         unsigned bypass:            1;
         unsigned freeze:            1;
+		unsigned cleanup_done:		1;
 		unsigned memsetup_done:		1;
+		unsigned mem_fail:			1;
     }flags = {0, 0, 0};
-
+	bypass_mode_t bp_mode;
 	audio_block_f32_t *inputQueueArray_f32[2];
     void NextRandomLineseg(ReverbScDl_t *lp, int n);
     void InitDelayLine(ReverbScDl_t *lp, int n);
@@ -138,12 +162,21 @@ private:
     bool initialised = false;
     ReverbScDl_t delay_lines_[8];
     float32_t *aux_; // main delay line storage buffer, placed either in RAM2 or PSRAM
+	const uint32_t aux_size_bytes = REVERBSC_DLYBUF_SIZE*sizeof(float32_t);
 	float32_t dry_gain = 0.5f;
 	float32_t wet_gain = 0.5f;
 
+	float32_t input_gain_set = 0.5f;
 	float32_t input_gain = 0.5f;
 	float32_t input_gain_tmp = 0.5f;
 	float32_t freeze_ingain = 0.05f;
 	static constexpr float32_t feedb_max = 0.99f;
+
+	bool memCleanup(void);
+	const uint32_t memCleanupStep = 512;
+	uint32_t memCleanupStart = 0;
+	uint32_t memCleanupEnd = memCleanupStep;
+
+
 };
 #endif // _EFFECT_REVERBSC_H_

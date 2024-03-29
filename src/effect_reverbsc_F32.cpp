@@ -1,7 +1,7 @@
 #include "effect_reverbsc_F32.h"
 
 
-#define REVERBSC_DLYBUF_SIZE 98936
+
 #define DELAYPOS_SHIFT 28
 #define DELAYPOS_SCALE 0x10000000
 #define DELAYPOS_MASK 0x0FFFFFFF
@@ -30,6 +30,8 @@ static int DelayLineBytesAlloc(float32_t sr, float32_t i_pitch_mod, int n);
 static const float32_t kOutputGain = 0.35f;
 static const float32_t kJpScale = 0.25f;
 
+extern uint8_t external_psram_size;
+
 AudioEffectReverbSc_F32::AudioEffectReverbSc_F32(bool use_psram) : AudioStream_F32(2, inputQueueArray_f32)
 {
 	sample_rate_ = AUDIO_SAMPLE_RATE_EXACT;
@@ -37,13 +39,27 @@ AudioEffectReverbSc_F32::AudioEffectReverbSc_F32(bool use_psram) : AudioStream_F
 	lpfreq_ = 10000;
 	i_pitch_mod_ = 1;
 	damp_fact_ = 0.195847f; // ~16kHz
-
+	flags.mem_fail = 0;
+	flags.bypass = 0;
+	flags.freeze = 0;
+	flags.cleanup_done = 1;
+	flags.memsetup_done = 0;
+	
 	int i, n_bytes = 0;
 	n_bytes = 0;
-	if (use_psram)	aux_ = (float32_t *) extmem_malloc(REVERBSC_DLYBUF_SIZE*sizeof(float32_t));
+	if (use_psram)	
+	{
+		// no PSRAM detected - enter the memoery failsafe mode = fixed bypass
+		if (external_psram_size == 0) 
+		{
+			flags.mem_fail = 1;
+			return;
+		}
+		aux_ = (float32_t *) extmem_malloc(aux_size_bytes);
+	}
 	else			
 	{
-		aux_ = (float32_t *) malloc(REVERBSC_DLYBUF_SIZE*sizeof(float32_t));
+		aux_ = (float32_t *) malloc(aux_size_bytes);
 		flags.memsetup_done = 1; 
 	}
 	if (!aux_) return;
@@ -57,8 +73,7 @@ AudioEffectReverbSc_F32::AudioEffectReverbSc_F32(bool use_psram) : AudioStream_F
 		n_bytes += DelayLineBytesAlloc(AUDIO_SAMPLE_RATE_EXACT, 1, i);
 	}
 	mix(0.5f);
-	flags.bypass = 0;
-	flags.freeze = 0;
+
 	initialised = true;
 }
 
@@ -135,14 +150,6 @@ void AudioEffectReverbSc_F32::InitDelayLine(ReverbScDl_t *lp, int n)
 void AudioEffectReverbSc_F32::update()
 {
 #if defined(__IMXRT1062__)
-	if (!initialised) return;
-	if ( !flags.memsetup_done)
-	{
-		memset(aux_, 0, REVERBSC_DLYBUF_SIZE*sizeof(float32_t));
-		arm_dcache_flush_delete(aux_, REVERBSC_DLYBUF_SIZE*sizeof(float32_t));
-		flags.memsetup_done = 1;
-		return;
-	}
 	audio_block_f32_t *blockL, *blockR;
 	int16_t i;
 	float32_t a_in_l, a_in_r, a_out_l, a_out_r, dryL, dryR;
@@ -152,32 +159,68 @@ void AudioEffectReverbSc_F32::update()
 	uint32_t n;
 	int buffer_size; /* Local copy */
 	float32_t damp_fact = damp_fact_;
-
-	if (flags.bypass)
-    {
-        if (dry_gain > 0.0f) 		// if dry/wet mixer is used
+	
+	if (!initialised) return;
+	// special case if memory allocation failed, pass the input signal directly to the output
+	if (flags.mem_fail)
+	{
+		blockL = AudioStream_F32::receiveReadOnly_f32(0);
+		blockR = AudioStream_F32::receiveReadOnly_f32(1);
+		if (!blockL || !blockR) 
 		{
-			blockL = AudioStream_F32::receiveReadOnly_f32(0);
-			blockR = AudioStream_F32::receiveReadOnly_f32(1);
-			if (!blockL || !blockR) 
-			{
-				if (blockL) AudioStream_F32::release(blockL);
-				if (blockR) AudioStream_F32::release(blockR);
-				return;
-			}
-			AudioStream_F32::transmit(blockL, 0);	
-			AudioStream_F32::transmit(blockR, 1);
-			AudioStream_F32::release(blockL);
-			AudioStream_F32::release(blockR);
+			if (blockL) AudioStream_F32::release(blockL);
+			if (blockR) AudioStream_F32::release(blockR);
 			return;
 		}
-		blockL = AudioStream_F32::allocate_f32();
-		if (!blockL) return;
-		memset(&blockL->data[0], 0, blockL->length*sizeof(float32_t));
 		AudioStream_F32::transmit(blockL, 0);	
-		AudioStream_F32::transmit(blockL, 1);
-		AudioStream_F32::release(blockL);	
-        return;
+		AudioStream_F32::transmit(blockR, 1);
+		AudioStream_F32::release(blockL);
+		AudioStream_F32::release(blockR);
+		return;
+	}
+
+	if ( !flags.memsetup_done)
+	{
+		flags.memsetup_done  = memCleanup();
+		return;
+	}
+	if (flags.bypass)
+    {
+		if (!flags.cleanup_done && bp_mode != BYPASS_MODE_TRAILS)
+		{
+			flags.cleanup_done = memCleanup();
+		}
+        switch(bp_mode)
+		{
+			case BYPASS_MODE_PASS:
+				blockL = AudioStream_F32::receiveReadOnly_f32(0);
+				blockR = AudioStream_F32::receiveReadOnly_f32(1);
+				if (!blockL || !blockR) 
+				{
+					if (blockL) AudioStream_F32::release(blockL);
+					if (blockR) AudioStream_F32::release(blockR);
+					return;
+				}
+				AudioStream_F32::transmit(blockL, 0);	
+				AudioStream_F32::transmit(blockR, 1);
+				AudioStream_F32::release(blockL);
+				AudioStream_F32::release(blockR);
+				return;
+				break;
+			case BYPASS_MODE_OFF:
+				blockL = AudioStream_F32::allocate_f32();
+				if (!blockL) return;
+				memset(&blockL->data[0], 0, blockL->length*sizeof(float32_t));
+				AudioStream_F32::transmit(blockL, 0);	
+				AudioStream_F32::transmit(blockL, 1);
+				AudioStream_F32::release(blockL);	
+				return;
+				break;
+			case BYPASS_MODE_TRAILS:
+				break;
+			default:
+				break;
+		}
     }
 	blockL = AudioStream_F32::receiveWritable_f32(0);
 	blockR = AudioStream_F32::receiveWritable_f32(1);
@@ -189,8 +232,10 @@ void AudioEffectReverbSc_F32::update()
 			AudioStream_F32::release(blockR);
 		return;
 	}
+	flags.cleanup_done = 0;
 	for (i = 0; i < blockL->length; i++)
 	{
+		input_gain += (input_gain_set - input_gain) * 0.25f;
 		/* calculate "resultant junction pressure" and mix to input signals */
 		a_in_l = a_out_l = a_out_r = 0.0f;
 		dryL = blockL->data[i] * input_gain;
@@ -290,15 +335,16 @@ void AudioEffectReverbSc_F32::update()
 
 void AudioEffectReverbSc_F32::freeze(bool state)
 {
+	if (flags.freeze == state) return;
 	flags.freeze = state;
 	if (state)
 	{
 		feedback_tmp = feedback_;      // store the settings
 		damp_fact_tmp = damp_fact_;
-		input_gain_tmp = input_gain;
+		input_gain_tmp = input_gain_set;
 		__disable_irq();
 		feedback_ = 1.0f; // infinite reverb                                      
-		input_gain = freeze_ingain;
+		input_gain_set = freeze_ingain;
 		__enable_irq();
 	}
 	else
@@ -306,7 +352,39 @@ void AudioEffectReverbSc_F32::freeze(bool state)
 		__disable_irq();
 		feedback_ = feedback_tmp;
 		damp_fact_ = damp_fact_tmp;
-		input_gain = input_gain_tmp;
+		if (!flags.bypass)
+		{
+			input_gain_set = input_gain_tmp;
+		}
 		__enable_irq();
 	}
+}
+
+/**
+ * @brief Partial memory clear
+ * 	Clearing all the delay buffers at once, esp. if 
+ * 	the PSRAM is used takes too long for the audio ISR.
+ *  Hence the buffer clear is done in configurable portions
+ *  spread over a few audio update routines.
+ * 
+ * @return true 	Memory clean is complete
+ * @return false 	Memory clean still in progress
+ */
+bool AudioEffectReverbSc_F32::memCleanup()
+{
+	bool result = false;
+	if (memCleanupEnd > REVERBSC_DLYBUF_SIZE) // last segment
+	{
+		memCleanupEnd = REVERBSC_DLYBUF_SIZE;
+		result = true;	
+	}
+	uint32_t l = (memCleanupEnd - memCleanupStart) * sizeof(float32_t);
+	uint8_t* memPtr = (uint8_t *)&aux_[0]+(memCleanupStart*sizeof(float32_t));
+	memset(memPtr, 0, l);
+	arm_dcache_flush_delete(memPtr, l);
+
+	memCleanupStart = memCleanupEnd;
+	memCleanupEnd += memCleanupStep;
+	
+	return result;
 }

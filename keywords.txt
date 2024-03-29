@@ -27,6 +27,8 @@ setMix	KEYWORD2
 AudioFilterShelvingLPHP	KEYWORD1
 AudioFilterLP	KEYWORD1
 
+AudioBasicTempBuffer_F32	KEYWORD1
+
 AudioEffectInfinitePhaser_F32	KEYWORD1
 depth	KEYWORD2
 depth_top	KEYWORD2
@@ -42,7 +44,6 @@ tgl_bypass	KEYWORD2
 AudioEffectMonoToStereo_F32	KEYWORD1
 stereo_set	KEYWORD2
 pan_set	KEYWORD2
-
 
 AudioEffectPhaserStereo_F32	KEYWORD1
 top	KEYWORD2
@@ -99,7 +100,7 @@ bass_cut	KEYWORD2
 AudioEffectDelayStereo_F32	KEYWORD1
 delay	KEYWORD2
 feedback	KEYWORD2
-inertia	
+inertia	KEYWORD2
 mod_rateHz	KEYWORD2
 mod_rate	KEYWORD2
 mod_depth	KEYWORD2
@@ -108,9 +109,66 @@ tap_tempo	KEYWORD2
 AudioEffectReverbSc_F32	KEYWORD1
 lowpass	KEYWORD2
 
+AudioEffectCompressorStereo_F32	KEYWORD1
+setDefaultValues	KEYWORD2
+calcAudioLevel_dB	KEYWORD2
+calcGain	KEYWORD2
+calcInstantaneousTargetGain	KEYWORD2
+calcSmoothedGain_dB	KEYWORD2
+resetStates	KEYWORD2
+setPreGain	KEYWORD2
+setPreGain_dB	KEYWORD2
+setPostGain	KEYWORD2
+setPostGain_dB	KEYWORD2
+setCompressionRatio	KEYWORD2
+setAttack_sec	KEYWORD2
+setRelease_sec	KEYWORD2
+setLevelTimeConst_sec	KEYWORD2
+setThresh_dBFS	KEYWORD2
+enableHPFilter	KEYWORD2
+getPreGain_dB	KEYWORD2
+getAttack_sec	KEYWORD2
+getRelease_sec	KEYWORD2
+getLevelTimeConst_sec	KEYWORD2
+getThresh_dBFS	KEYWORD2
+getCompressionRatio	KEYWORD2
+getCurrentLevel_dBFS	KEYWORD2
+getCurrentGain_dB	KEYWORD2
+setHPFilterCoeff_N2IIR_Matlab	
+bypass_get	KEYWORD2
+bypass_set	KEYWORD2
+bypass_tgl	KEYWORD2
+setSideChainMode	KEYWORD2
+
+AudioEffectGainStereo_F32	KEYWORD1
+setGain	KEYWORD2
+setGain_dB	KEYWORD2
+getGain	KEYWORD2
+getGain_dB	KEYWORD2
+setPan	KEYWORD2
+getPan	KEYWORD2
+
+AudioEffectGuitarBooster_F32	KEYWORD1
+drive	KEYWORD2
+bottom	KEYWORD2
+tone	KEYWORD2
+bias	KEYWORD2
+mix	KEYWORD2
+volume	KEYWORD2
+octave_get	KEYWORD2
+octave_set	KEYWORD2
+octave_tgl	KEYWORD2
+
 
 memcpyInterleave_f32	KEYWORD2
 memcpyDeinterleave_f32	KEYWORD2
 
 AudioInputI2S2_F32	KEYWORD1
 AudioOutputI2S2_F32	KEYWORD1
+
+AudioControlSGTL5000_Ext	KEYWORD1
+
+AudioControlWM8731_Ext	KEYWORD1
+dac_mute	KEYWORD2
+HPfilter	KEYWORD2
+

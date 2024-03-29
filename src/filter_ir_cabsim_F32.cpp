@@ -56,7 +56,30 @@ void AudioFilterIRCabsim_F32::update()
 		if (blockR) AudioStream_F32::release(blockR);
 		return;
 	}
+#ifdef USE_IR_ISR_LOAD
+	switch(ir_loadState)
+	{
+		case IR_LOAD_START:
+			ptr_fmask = &fmask[0][0];
+			ptr_fftout = &fftout[0];
+			memset(ptr_fftout, 0, nfor*512*4);  // clear fftout array
+			memset(fftin, 0,  512 * 4);  // clear fftin array
+			ir_loadState = IR_LOAD_STEP1;	
+			break;
+		case IR_LOAD_STEP1:
+			init_partitioned_filter_masks(irPtrTable[ir_idx]);
+			ir_loadState = IR_LOAD_STEP2;
+			break;
+		case IR_LOAD_STEP2:
+			delay.reset();
+			ir_loaded = 1;
+			ir_loadState = IR_LOAD_FINISHED;
+			break;
+		case IR_LOAD_FINISHED:
+		default: break;
+	}
 
+#endif
 	if (!ir_loaded) // ir not loaded yet or bypass mode
 	{
 		// bypass clean signal
@@ -66,6 +89,7 @@ void AudioFilterIRCabsim_F32::update()
 		AudioStream_F32::release(blockR);
 		return;
 	}
+
 	if (first_block) // fill real & imaginaries with zeros for the first BLOCKSIZE samples
 	{
 		memset(&fftin[0], 0, blockL->length*sizeof(float32_t)*4);
@@ -136,7 +160,6 @@ void AudioFilterIRCabsim_F32::update()
 	// apply post EQ, restore the channel R phase, reduce the gain a bit
 	if (doubleTrack)  
 	{
-		
 		arm_fir_f32(&FIR_postL, blockL->data, blockL->data, blockL->length);
 		arm_fir_f32(&FIR_postR, blockR->data, blockR->data, blockR->length);
 		arm_scale_f32(blockR->data, -doubler_gainR, blockR->data, blockR->length);
@@ -156,6 +179,7 @@ void AudioFilterIRCabsim_F32::ir_register(const float32_t *irPtr, uint8_t positi
 	irPtrTable[position] = irPtr;
 }
 
+
 void AudioFilterIRCabsim_F32::ir_load(uint8_t idx)
 {
 	const float32_t *newIrPtr = NULL;
@@ -173,6 +197,17 @@ void AudioFilterIRCabsim_F32::ir_load(uint8_t idx)
 	{
 		return;
 	}
+#ifdef USE_IR_ISR_LOAD
+	nc = newIrPtr[0];
+	uint32_t _nfor = nc / IR_BUFFER_SIZE;
+	if (_nfor > nforMax) _nfor = nforMax;
+	__disable_irq()
+	nfor = _nfor;
+	ir_loadState = IR_LOAD_START;
+	__enable_irq();
+	ir_length_ms =  (1000.0f * nfor * (float32_t)AUDIO_BLOCK_SAMPLES) / AUDIO_SAMPLE_RATE_EXACT;
+#else
+	
 	AudioNoInterrupts();
 	nc = newIrPtr[0];
 	nfor = nc / IR_BUFFER_SIZE;
@@ -188,7 +223,10 @@ void AudioFilterIRCabsim_F32::ir_load(uint8_t idx)
 	delay.reset();
 	ir_loaded = 1;
 	AudioInterrupts();
+	#endif
+
 }
+
 
 void AudioFilterIRCabsim_F32::init_partitioned_filter_masks(const float32_t *irPtr)
 {

@@ -39,8 +39,9 @@
 #include <Arduino.h>
 #include <arm_math.h> 
 #include "AudioStream_F32.h"
-#include "AudioStream.h"   //Do we really need this?? (Chip, 2020-10-31)
 #include "DMAChannel.h"
+
+
 
 class AudioInputI2S2_F32 : public AudioStream_F32
 {
@@ -54,21 +55,15 @@ public:
 	}
 	
 	virtual void update(void);
-	static void scale_i16_to_f32( float32_t *p_i16, float32_t *p_f32, int len) ;
-	static void scale_i24_to_f32( float32_t *p_i24, float32_t *p_f32, int len) ;
-	static void scale_i32_to_f32( float32_t *p_i32, float32_t *p_f32, int len);
+
 	void begin(void);
-	void begin(bool);
-	void sub_begin_i32(void);
-	//void sub_begin_i16(void);
 	int get_isOutOfMemory(void) { return flag_out_of_memory; }
 	void clear_isOutOfMemory(void) { flag_out_of_memory = 0; }
-	//friend class AudioOutputI2S_F32;
+	bool get_update_responsibility() { return update_responsibility;}
 protected:	
 	AudioInputI2S2_F32(int dummy): AudioStream_F32(0, NULL) {} // to be used only inside AudioInputI2Sslave !!
 	static bool update_responsibility;
 	static DMAChannel dma;
-	static void isr_32(void);
 	static void isr(void);
 	virtual void update_1chan(int, audio_block_f32_t *&);
 private:
@@ -86,7 +81,6 @@ class AudioInputI2S2slave_F32 : public AudioInputI2S2_F32
 public:
 	AudioInputI2S2slave_F32(void) : AudioInputI2S2_F32(0) { begin(); }
 	void begin(void);
-	friend void dma_ch1_isr(void);
 };
 
 #endif // _INPUT_I2S_F32_H_

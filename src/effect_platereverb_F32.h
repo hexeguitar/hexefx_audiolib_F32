@@ -28,16 +28,6 @@
  * Algorithm based on plate reverbs developed for SpinSemi FV-1 DSP chip
  * 
  * Allpass + modulated delay line based lush plate reverb
- * 
- * Input parameters are float in range 0.0 to 1.0:
- * 
- * size - reverb time
- * hidamp - hi frequency loss in the reverb tail
- * lodamp - low frequency loss in the reverb tail
- * lowpass - output/master lowpass filter, useful for darkening the reverb sound 
- * diffusion - lower settings will make the reverb tail more "echoey".
- * freeze - infinite reverb tail effect
- * 
  */
 
 #ifndef _EFFECT_PLATEREVERB_F32_H_
@@ -60,38 +50,63 @@ public:
 
     bool begin(void);
 
+	/**
+	 * @brief sets the reverb time
+	 * 
+	 * @param n range 0.0f - 1.0f
+	 */
     void size(float n)
     {
         n = constrain(n, 0.0f, 1.0f);
 		n = 2*n - n*n;
         n = map(n, 0.0f, 1.0f, 0.2f, rv_time_k_max);
-        //float attn = map(n, 0.2f, rv_time_k_max, 0.5f, 0.25f);
+		rv_time_k_tmp = n;
+		inputGain_tmp = 0.5f;
 		__disable_irq();
         rv_time_k = n;
-        input_attn = 0.5f;
+        inputGainSet = 0.5f;
 		__enable_irq();
     }
-
+	/**
+	 * @brief returns the set reverb time
+	 * 
+	 * @return float reverb time value
+	 */
 	float size_get(void) {return rv_time_k;}
 
+	/**
+	 * @brief Treble loss in reverb tail
+	 * 
+	 * @param n 0.0f to 1.0f
+	 */
     void hidamp(float n)
     {
         n = 1.0f - constrain(n, 0.0f, 1.0f);
+		lp_hidamp_k_tmp = n;
 		__disable_irq();
         lp_hidamp_k = n;
 		__enable_irq();
     }
-    
+    /**
+     * @brief Bass loss in reverb tails
+     * 
+     * @param n 0.0f to 1.0f
+     */
     void lodamp(float n)
     {
         n = -constrain(n, 0.0f, 1.0f);
 		float32_t tscal = 1.0f + n*0.12f; //n is negativbe here
+		lp_lodamp_k_tmp = n;
 		__disable_irq();
         lp_lodamp_k = n;
         rv_time_scaler = tscal;        // limit the max reverb time, otherwise it will clip
 		__enable_irq();
 	}
-
+	/**
+	 * @brief Output lowpass filter
+	 * 
+	 * @param n 0.0f to 1.0f
+	 */
     void lowpass(float n)
     {
         n = 1.0f - constrain(n, 0.0f, 1.0f);
@@ -99,6 +114,11 @@ public:
 		master_lp_k = n;
 		__enable_irq();
     }
+	/**
+	 * @brief Output highpass filter
+	 * 
+	 * @param n 0.0f 1.0f
+	 */
     void hipass(float n)
 	{
 		n = -constrain(n, 0.0f, 1.0f);
@@ -106,6 +126,12 @@ public:
 		master_hp_k = n;
 		__enable_irq();
 	}
+	/**
+	 * @brief reverb tail diffusion, 
+	 * 	lower values produce more single repeats, echos
+	 * 
+	 * @param n 0.0f - 1.0f
+	 */
     void diffusion(float n)
     {
         n = constrain(n, 0.0f, 1.0f);
@@ -115,9 +141,15 @@ public:
         loop_allp_k = n;
 		__enable_irq();
     }
-
+	/**
+	 * @brief Freeze option On/Off. Freeze sets the reverb
+	 * 	time to infinity and mutes (almost) the input signal
+	 * 
+	 * @param state 
+	 */
     void freeze(bool state)
     {
+		if (flags.freeze == state || flags.bypass) return;
         flags.freeze = state;
         if (state)
         {
@@ -126,7 +158,7 @@ public:
             lp_hidamp_k_tmp = lp_hidamp_k;
             __disable_irq();
             rv_time_k = freeze_rvtime_k;                                      
-            input_attn = freeze_ingain;
+            inputGainSet = freeze_ingain;
             rv_time_scaler = 1.0f;
             lp_lodamp_k = freeze_lodamp_k;
             lp_hidamp_k = freeze_hidamp_k;
@@ -136,11 +168,14 @@ public:
         }
         else
         {
-            //float attn = map(rv_time_k_tmp, 0.0f, rv_time_k_max, 0.5f, 0.25f);    // recalc the in attenuation
             float sc = 1.0f - lp_lodamp_k_tmp * 0.12f;									// scale up the reverb time due to bass loss
 			__disable_irq();
             rv_time_k = rv_time_k_tmp;                                      // restore the value
-            input_attn = 0.5f;
+            if (!flags.bypass)
+			{
+				inputGainSet = 0.5f;
+				inputGain_tmp = 0.5f;
+			}
             rv_time_scaler = sc;
             lp_hidamp_k = lp_hidamp_k_tmp;
             lp_lodamp_k = lp_lodamp_k_tmp;
@@ -160,9 +195,13 @@ public:
 		b = constrain(b, 0.0f, 1.0f);
 		b = map(b, 0.0f, 1.0f, 0.0f, 0.1f);
 		freeze_ingain = b;
-		if (flags.freeze) input_attn = b; // update input gain if freeze is enabled
+		if (flags.freeze) inputGainSet = b; // update input gain if freeze is enabled
 	}
-
+	/**
+	 * @brief Internal Dry / Wet mixer
+	 * 
+	 * @param m 0.0f (full dry) - 1.0f (full wet)
+	 */
     void mix(float m)
     {
 		float32_t dry, wet;
@@ -173,7 +212,11 @@ public:
 		dry_gain = dry;
 		__enable_irq();
 	}
-	
+	/**
+	 * @brief wet signal volume
+	 * 
+	 * @param wet 0.0f - 1.0f
+	 */
     void wet_level(float wet)
     {
 		wet = constrain(wet, 0.0f, 6.0f);
@@ -181,7 +224,11 @@ public:
 		wet_gain = wet;
 		__enable_irq();
     }
-
+	/**
+	 * @brief dry signal volume
+	 * 
+	 * @param dry 0.0f - 1.0f
+	 */
     void dry_level(float dry)
     {
         dry = constrain(dry, 0.0f, 1.0f);
@@ -189,21 +236,51 @@ public:
 		dry_gain = dry;
 		__enable_irq();
     }
-
-    bool freeze_tgl() {flags.freeze ^= 1; freeze(flags.freeze); return flags.freeze;}
-    
+	/**
+	 * @brief toogle the Freeze mode
+	 * 
+	 * @return true 
+	 * @return false 
+	 */
+    bool freeze_tgl() {freeze(flags.freeze^1); return flags.freeze;}
+    /**
+     * @brief return the Freeze mode state
+     * 
+     * @return true 
+     * @return false 
+     */
     bool freeze_get() {return flags.freeze;}
-    
+ 	
+	typedef enum
+	{
+		BYPASS_MODE_PASS,		// pass the input signal to the output
+		BYPASS_MODE_OFF,		// mute the output
+		BYPASS_MODE_TRAILS		// mutes the input only
+	}bypass_mode_t;
+	/**
+	 * @brief sets the bypass mode (see above)
+	 * 
+	 * @param m 
+	 */
+	void bypass_setMode(bypass_mode_t m)
+	{
+		if (m <= BYPASS_MODE_TRAILS) bp_mode = m;
+	}
+	bypass_mode_t bypass_geMode() {return bp_mode;}   
     bool bypass_get(void) {return flags.bypass;}
     void bypass_set(bool state) 
     {
         flags.bypass = state;
-        if (state) freeze(false);       // disable freeze in bypass mode
+        if (state) 
+		{
+			if (bp_mode == BYPASS_MODE_TRAILS) inputGainSet = 0.0f;
+			freeze(false);       // disable freeze in bypass mode
+		}
+		else inputGainSet = inputGain_tmp;
     }
     bool bypass_tgl(void) 
     {
-        flags.bypass ^= 1; 
-        if (flags.bypass) freeze(false);       // disable freeze in bypass mode
+		bypass_set(flags.bypass^1);
         return flags.bypass;
     }
 
@@ -219,9 +296,9 @@ public:
 	}
 
 	/**
-	 * @brief 
+	 * @brief Contriols the amount of shimmer effect
 	 * 
-	 * @param s 
+	 * @param s 0.0f - 1.0f
 	 */
 	void shimmer(float s)
 	{
@@ -232,11 +309,21 @@ public:
 		pitchShimR.setMix(s);
 		shimmerRatio = s;
 	}
+	/**
+	 * @brief Sets the pitch of the shimmer effect
+	 * 
+	 * @param ratio pitch up (>1.0f)  or down (<1.0f) ratio
+	 */
 	void shimmerPitch(float ratio)
 	{
 		pitchShimL.setPitch(ratio);
 		pitchShimR.setPitch(ratio);
 	}
+	/**
+	 * @brief Sets the shimmer effect pitch in semitones
+	 * 
+	 * @param semitones 
+	 */
 	void shimmerPitchSemitones(int8_t semitones)
 	{
 		pitchShimL.setPitchSemintone(semitones);
@@ -252,6 +339,11 @@ public:
 		pitchL.setPitchSemintone(semitones);
 		pitchR.setPitchSemintone(semitones);
 	}
+	/**
+	 * @brief Reverb pitch shifter dry/wet mixer
+	 * 
+	 * @param s 0.0f(dry reverb) - 1.0f (100% pitch shifter out)
+	 */
 	void pitchMix(float s)
 	{
 		s = constrain(s, 0.0f, 1.0f);
@@ -268,6 +360,7 @@ private:
         unsigned shimmer:           1;
         unsigned cleanup_done:      1;
     }flags;
+	bypass_mode_t bp_mode = BYPASS_MODE_PASS;
     audio_block_f32_t *inputQueueArray_f32[2];
 
 	static const uint16_t IN_ALLP1_BUFL_LEN = 224u;
@@ -320,7 +413,9 @@ private:
 	AudioBasicLfo lfo1 = AudioBasicLfo(1.35f, LFO_AMPL);
 	AudioBasicLfo lfo2 = AudioBasicLfo(1.57f, LFO_AMPL);
 
-    float input_attn;
+    float inputGain;
+	float inputGainSet;
+	float inputGain_tmp;
     float wet_gain;
     float dry_gain;
 

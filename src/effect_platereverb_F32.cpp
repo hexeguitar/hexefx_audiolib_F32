@@ -46,7 +46,9 @@ AudioEffectPlateReverb_F32::AudioEffectPlateReverb_F32() : AudioStream_F32(2, in
 
 bool AudioEffectPlateReverb_F32::begin()
 {
-    input_attn = 0.5f;
+	inputGainSet = 0.5f;
+    inputGain = 0.5f;
+	inputGain_tmp = 0.5f;
     wet_gain = 1.0f;        // default mode: wet signal only
     dry_gain = 0.0f;
     in_allp_k = INP_ALLP_COEFF;
@@ -129,7 +131,7 @@ void AudioEffectPlateReverb_F32::update()
     // handle bypass, 1st call will clean the buffers to avoid continuing the previous reverb tail
     if (flags.bypass)
     {
-        if (!flags.cleanup_done)
+        if (!flags.cleanup_done && bp_mode != BYPASS_MODE_TRAILS)
         {
 			in_allp_1L.reset();
 			in_allp_2L.reset();
@@ -149,33 +151,37 @@ void AudioEffectPlateReverb_F32::update()
 			lp_dly4.reset();
             flags.cleanup_done = 1;
         }
-
-        if (dry_gain > 0.0f) 		// if dry/wet mixer is used
+		switch(bp_mode)
 		{
-			blockL = AudioStream_F32::receiveReadOnly_f32(0);
-			blockR = AudioStream_F32::receiveReadOnly_f32(1);
-			if (!blockL || !blockR) 
-			{
-				if (blockL) AudioStream_F32::release(blockL);
-				if (blockR) AudioStream_F32::release(blockR);
+			case BYPASS_MODE_PASS:
+				blockL = AudioStream_F32::receiveReadOnly_f32(0);
+				blockR = AudioStream_F32::receiveReadOnly_f32(1);
+				if (!blockL || !blockR) 
+				{
+					if (blockL) AudioStream_F32::release(blockL);
+					if (blockR) AudioStream_F32::release(blockR);
+					return;
+				}
+				AudioStream_F32::transmit(blockL, 0);	
+				AudioStream_F32::transmit(blockR, 1);
+				AudioStream_F32::release(blockL);
+				AudioStream_F32::release(blockR);
 				return;
-			}
-			AudioStream_F32::transmit(blockL, 0);	
-			AudioStream_F32::transmit(blockR, 1);
-			AudioStream_F32::release(blockL);
-			AudioStream_F32::release(blockR);
-			return;
+				break;
+			case BYPASS_MODE_OFF:
+				blockL = AudioStream_F32::allocate_f32();
+				if (!blockL) return;
+				memset(&blockL->data[0], 0, blockL->length*sizeof(float32_t));
+				AudioStream_F32::transmit(blockL, 0);	
+				AudioStream_F32::transmit(blockL, 1);
+				AudioStream_F32::release(blockL);	
+				return;
+				break;
+			case BYPASS_MODE_TRAILS:
+			default:
+				break;
 		}
-		blockL = AudioStream_F32::allocate_f32();
-		if (!blockL) return;
-		memset(&blockL->data[0], 0, blockL->length*sizeof(float32_t));
-		AudioStream_F32::transmit(blockL, 0);	
-		AudioStream_F32::transmit(blockL, 1);
-		AudioStream_F32::release(blockL);	
-        return;
     }
-    flags.cleanup_done = 0;
-
     blockL = AudioStream_F32::receiveWritable_f32(0);
     blockR = AudioStream_F32::receiveWritable_f32(1);
 
@@ -185,6 +191,7 @@ void AudioEffectPlateReverb_F32::update()
 		if (blockR) AudioStream_F32::release(blockR);
 		return;
 	}
+	flags.cleanup_done = 0;
     rv_time = rv_time_k;
 
 	for (i=0; i < blockL->length; i++) 
@@ -193,7 +200,9 @@ void AudioEffectPlateReverb_F32::update()
 		lfo1.update();
 		lfo2.update();
 
-		acc = blockL->data[i] * input_attn;
+		inputGain += (inputGainSet - inputGain) * 0.25f;
+
+		acc = blockL->data[i] * inputGain;
 
         // chained input allpasses, channel L
 		acc = in_allp_1L.process(acc);
@@ -203,7 +212,7 @@ void AudioEffectPlateReverb_F32::update()
 		in_allp_out_L = pitchL.process(in_allp_out_L); 
 
 		// chained input allpasses, channel R
-        acc = blockR->data[i] * input_attn;
+        acc = blockR->data[i] * inputGain;
 
 		acc = in_allp_1R.process(acc);
 		acc = in_allp_2R.process(acc);

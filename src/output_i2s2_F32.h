@@ -58,22 +58,11 @@ public:
 	virtual void update(void);
 	void begin(void);
 	void begin(bool);
-	void sub_begin_i32(void);
-	void sub_begin_i16(void);
 	friend class AudioInputI2S2_F32;
 
-	//friend class AudioInputI2S_F32;
-	#if defined(__IMXRT1062__)
 	friend class AudioOutputI2SQuad_F32;
 	friend class AudioInputI2SQuad_F32;
-
-	#endif
-
-	static void scale_f32_to_i16( float32_t *p_f32, float32_t *p_i16, int len) ;
-	static void scale_f32_to_i24( float32_t *p_f32, float32_t *p_i16, int len) ;
-	static void scale_f32_to_i32( float32_t *p_f32, float32_t *p_i32, int len) ;
-	
-	static float setI2SFreq_T3(const float);  // I2S clock for T3,x
+	bool get_update_responsibility() { return update_responsibility;}
 protected:
 	AudioOutputI2S2_F32(int dummy): AudioStream_F32(2, inputQueueArray) {} // to be used only inside AudioOutputI2Sslave !!
 	static void config_i2s(void);
@@ -85,8 +74,6 @@ protected:
 	static audio_block_f32_t *block_right_1st;
 	static bool update_responsibility;
 	static DMAChannel dma;
-	static void isr_16(void);
-	static void isr_32(void);
 	static void isr(void);
 private:
 	static audio_block_f32_t *block_left_2nd;
@@ -98,14 +85,13 @@ private:
 	static int audio_block_samples;
 	volatile uint8_t enabled = 1;
 };
-
+ 
 class AudioOutputI2S2slave_F32 : public AudioOutputI2S2_F32
 {
 public:
 	AudioOutputI2S2slave_F32(void) : AudioOutputI2S2_F32(0) { begin(); } ;
 	void begin(void);
 	friend class AudioInputI2S2slave_F32;
-	friend void dma_ch0_isr(void);
 protected:
 	static void config_i2s(void);
 };

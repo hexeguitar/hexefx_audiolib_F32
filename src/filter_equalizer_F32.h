@@ -113,9 +113,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * 01.2024 - added
- *
- *
+ * 01.2024 - added bypass system, Piot rZapart www.hexefx.com
  */
 
 #ifndef _FILTEREQUALIZER_F32_H_

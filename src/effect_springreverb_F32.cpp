@@ -39,7 +39,7 @@
 
 AudioEffectSpringReverb_F32::AudioEffectSpringReverb_F32() : AudioStream_F32(2, inputQueueArray)
 {
-    input_attn = 0.5f;
+    inputGain = 0.5f;
 	rv_time_k = 0.8f;
     in_allp_k = INP_ALLP_COEFF;
 	bool memOK = true;
@@ -94,7 +94,7 @@ void AudioEffectSpringReverb_F32::update()
     if (!initialized) return;
     if (bp)
     {
-		if (!cleanup_done)
+		if (!cleanup_done && bp_mode != BYPASS_MODE_TRAILS)
 		{
 			sp_lp_allp1a.reset();
 			sp_lp_allp1b.reset();
@@ -113,29 +113,36 @@ void AudioEffectSpringReverb_F32::update()
 			cleanup_done = true;
 		}
 
-        if (dry_gain > 0.0f) 		// if dry/wet mixer is used
+		switch(bp_mode)
 		{
-			blockL = AudioStream_F32::receiveReadOnly_f32(0);
-			blockR = AudioStream_F32::receiveReadOnly_f32(1);
-			if (!blockL || !blockR) 
-			{
-				if (blockL) AudioStream_F32::release(blockL);
-				if (blockR) AudioStream_F32::release(blockR);
+			case BYPASS_MODE_PASS:
+				blockL = AudioStream_F32::receiveReadOnly_f32(0);
+				blockR = AudioStream_F32::receiveReadOnly_f32(1);
+				if (!blockL || !blockR) 
+				{
+					if (blockL) AudioStream_F32::release(blockL);
+					if (blockR) AudioStream_F32::release(blockR);
+					return;
+				}
+				AudioStream_F32::transmit(blockL, 0);	
+				AudioStream_F32::transmit(blockR, 1);
+				AudioStream_F32::release(blockL);
+				AudioStream_F32::release(blockR);
 				return;
-			}
-			AudioStream_F32::transmit(blockL, 0);	
-			AudioStream_F32::transmit(blockR, 1);
-			AudioStream_F32::release(blockL);
-			AudioStream_F32::release(blockR);
-			return;
+				break;
+			case BYPASS_MODE_OFF:
+				blockL = AudioStream_F32::allocate_f32();
+				if (!blockL) return;
+				memset(&blockL->data[0], 0, blockL->length*sizeof(float32_t));
+				AudioStream_F32::transmit(blockL, 0);	
+				AudioStream_F32::transmit(blockL, 1);
+				AudioStream_F32::release(blockL);	
+				return;
+				break;
+			case BYPASS_MODE_TRAILS:
+			default:
+				break;
 		}
-		blockL = AudioStream_F32::allocate_f32();
-		if (!blockL) return;
-		memset(&blockL->data[0], 0, blockL->length*sizeof(float32_t));
-		AudioStream_F32::transmit(blockL, 0);	
-		AudioStream_F32::transmit(blockL, 1);
-		AudioStream_F32::release(blockL);	
-        return;
     }
 	cleanup_done = false;
 	blockL = AudioStream_F32::receiveWritable_f32(0);
@@ -152,13 +159,14 @@ void AudioEffectSpringReverb_F32::update()
 	for (i=0; i < blockL->length; i++) 
     {  
 		lfo.update();
+		inputGain += (inputGainSet - inputGain) * 0.25f;
 		dryL = blockL->data[i];
 		dryR = blockR->data[i];
-		dry_in = (dryL + dryR) * input_attn;
+		dry_in = (dryL + dryR) * inputGain;
 
-		mono_in = flt_in.process(dry_in)* (1.0f + in_BassCut_k*-2.5f); // add highpass gain compaensation?
-		acc = lp_dly1.getTap(0) * rv_time;	// get DLY1 output
-		lp_out1 = flt_lp1.process(acc);			// filter it
+		mono_in = flt_in.process(dry_in)* (1.0f + in_BassCut_k*-2.5f);
+		acc = lp_dly1.getTap(0) * rv_time;
+		lp_out1 = flt_lp1.process(acc);
 
 		acc = sp_lp_allp1a.process(lp_out1); 
 		acc = sp_lp_allp1b.process(acc);

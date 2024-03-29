@@ -69,10 +69,11 @@ public:
     {
         n = constrain(n, 0.0f, 1.0f);
         n = map (n, 0.0f, 1.0f, 0.7f, rv_time_k_max);
-        float32_t attn = map(n, 0.0f, rv_time_k_max, 0.5f, 0.2f);
+        float32_t gain = map(n, 0.0f, rv_time_k_max, 0.5f, 0.2f);
+		inputGain_tmp = gain;
         __disable_irq();
         rv_time_k = n;
-        input_attn = attn;
+        inputGainSet = gain;
         __enable_irq();
     }
 
@@ -119,23 +120,46 @@ public:
 		__enable_irq();
     }
     float32_t get_size(void) {return rv_time_k;}
+
+	typedef enum
+	{
+		BYPASS_MODE_PASS,		// pass the input signal to the output
+		BYPASS_MODE_OFF,		// mute the output
+		BYPASS_MODE_TRAILS		// mutes the input only
+	}bypass_mode_t;
+	void bypass_setMode(bypass_mode_t m)
+	{
+		if (m <= BYPASS_MODE_TRAILS) bp_mode = m;
+	}
+	bypass_mode_t bypass_geMode() {return bp_mode;}
     bool bypass_get(void) {return bp;}
-    void bypass_set(bool state) {bp = state;}
+    void bypass_set(bool state) 
+	{
+		bp = state;
+		if (bp && bp_mode==BYPASS_MODE_TRAILS)
+		{
+			inputGainSet = 0.0f;
+		}
+		if (bp == false) inputGainSet = inputGain_tmp;
+	}
     bool bypass_tgl(void) 
     {
-        bp ^= 1; 
+		bypass_set(bp^1);
         return bp;
     } 
 private:
     audio_block_f32_t *inputQueueArray[2];
 
-    float32_t input_attn;  
+	float32_t inputGainSet = 0.5f;
+    float32_t inputGain = 0.5f;
+	float32_t inputGain_tmp = 0.5f;
     float32_t  wet_gain;
     float32_t  dry_gain;
     float32_t in_allp_k; // input allpass coeff (default 0.6)
     float32_t chrp_allp_k[4] = {-0.7f, -0.65f, -0.6f, -0.5f};
 
     bool bp = false;
+	bypass_mode_t bp_mode = BYPASS_MODE_PASS;
 	bool cleanup_done = false;
     uint16_t chrp_alp1_idx[SPRVB_CHIRP_AMNT] = {0};
     uint16_t chrp_alp2_idx[SPRVB_CHIRP_AMNT] = {0};
@@ -167,6 +191,7 @@ private:
 	float32_t in_BassCut_k;
 	float32_t lp_TrebleCut_k;
 	float32_t lp_BassCut_k;
+	
 
 	AudioFilterShelvingLPHP flt_in;
 	AudioFilterShelvingLPHP flt_lp1;

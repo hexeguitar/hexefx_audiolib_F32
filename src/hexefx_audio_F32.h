@@ -1,13 +1,19 @@
 #ifndef _HEXEFX_AUDIO_H
 #define _HEXEFX_AUDIO_H
 
+#include "control_WM8731_F32.h"
+#include "control_SGTL5000_F32.h"
+
 #include "input_i2s2_F32.h"
 #include "output_i2s2_F32.h"
+
+#include "switch_selectorStereo_F32.h"
 
 #include "filter_ir_cabsim_F32.h"
 #include "filter_tonestackStereo_F32.h"
 #include "filter_equalizer_F32.h"
 #include "filter_3bandeq.h"
+#include "filter_biquadStereo_F32.h"
 
 #include "effect_gainStereo_F32.h"
 #include "effect_platereverb_F32.h"
@@ -17,6 +23,9 @@
 #include "effect_infphaser_F32.h"
 #include "effect_phaserStereo_F32.h"
 #include "effect_noiseGateStereo_F32.h"
-#include "effect_delaystereo.h"
+#include "effect_delaystereo_F32.h"
+#include "effect_compressorStereo_F32.h"
+#include "effect_guitarBooster_F32.h"
+#include "effect_xfaderStereo_F32.h"
 
 #endif // _HEXEFX_AUDIO_H

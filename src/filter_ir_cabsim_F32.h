@@ -41,6 +41,9 @@
 #define IR_N_B          (1)
 #define IR_MAX_REG_NUM  11       // max number of registered IRs
 
+
+#define USE_IR_ISR_LOAD
+
 class AudioFilterIRCabsim_F32 : public AudioStream_F32
 {
 public:
@@ -155,6 +158,17 @@ private:
 		 0.154734746f,     0.35352844f,     0.441179603f,     0.35352844f,      0.154734746f,   -0.0208595414f,
 		-0.0834295526f,   -0.0470990688f,   0.0108086104f,    0.0319586769f,    0.0158470348f,  -0.00560652791f, 
 		-0.0112718018f,   -0.00476867426f,  0.0013392308f,    0.00207542209f,   0.000503875781f, 0.0f };
+
+
+		typedef enum
+		{
+			IR_LOAD_START,
+			IR_LOAD_STEP1,
+			IR_LOAD_STEP2,
+			IR_LOAD_FINISHED
+		}ir_loadState_t;
+		ir_loadState_t ir_loadState = IR_LOAD_FINISHED;
+
 }; 
 
 

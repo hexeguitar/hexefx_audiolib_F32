@@ -59,6 +59,11 @@ public:
         hpreg += tmp1 * hp_f;
 		return (lpreg + hidamp*tmp2 + lodamp * hpreg);
 	}
+	void reset()
+	{
+		lpreg = 0.0f;
+		hpreg = 0.0f;
+	}
 private:
 	float lpreg;
 	float hpreg;

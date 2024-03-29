@@ -7,5 +7,6 @@
 #include "basic_shelvFilter.h"
 #include "basic_pitch.h"
 #include "basic_DSPutils.h"
+#include "basic_tempBuffer.h"
 
 #endif // _BASIC_COMPONENTS_H_

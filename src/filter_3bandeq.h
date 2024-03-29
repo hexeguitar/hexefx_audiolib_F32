@@ -15,6 +15,7 @@
 // - Uses 4 first order filters in series, should give 24dB per octave
 // - Now with P4 Denormal fix :)
 //----------------------------------------------------------------------------
+// Teensy OpenAudio_ArduinoLibrary_F32 port: 01.2024 Piotr Zapart www.hexefx.com 
 
 #ifndef _FILTER_3BANDEQ_H_
 #define _FILTER_3BANDEQ_H_
@@ -23,7 +24,6 @@
 #include "AudioStream_F32.h"
 #include "arm_math.h"
 #include "mathDSP_F32.h"
-#include "basic_components.h"
 
 class AudioFilterEqualizer3band_F32 : public AudioStream_F32
 {

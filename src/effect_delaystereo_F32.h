@@ -40,16 +40,18 @@ public:
 	~AudioEffectDelayStereo_F32(){};
 	virtual void update();
 	/**
-	 * @brief delay time
+	 * @brief set the delay time
 	 * 
-	 * @param t scaled to 0.0f-1.0f range
+	 * @param t delay time scaled to range 0.0 to 1.0
+	 * @param force bypass the smoothing, immediate change
 	 */
-	void time(float t)
+	void time(float t, bool force = false)
 	{
 		t = constrain(t, 0.0f, 1.0f);
 		t = t * t;
 		t = map(t, 0.0f, 1.0f, (float32_t)(dly_length-dly_time_min), 0.0f);
 		__disable_irq();
+		if (force) dly_time = t;
 		dly_time_set = t;
 		__enable_irq();
 	}
@@ -73,13 +75,15 @@ public:
 	 */
 	void feedback(float n)
     {
+		if (infinite) return;
 		float32_t fb, attn;
         n = constrain(n, 0.0f, 1.0f);
 	    fb = map(n, 0.0f, 1.0f, 0.0f, feedb_max) * hp_feedb_limit;
         attn = map(n*n*n, 0.0f, 1.0f, 1.0f, 0.4f);
+		inputGain_tmp = attn;
         __disable_irq();
         feedb = fb;
-        input_attn = attn;
+        inputGainSet = attn;
         __enable_irq();
     }
 	/**
@@ -116,7 +120,9 @@ public:
 	 */
     void treble_cut(float n)
     {
+		if (infinite) return;
         n = 1.0f - constrain(n, 0.0f, 1.0f);
+		trebleCut_k_tmp = n;
 		__disable_irq();
         trebleCut_k = n;
 		__enable_irq();
@@ -141,8 +147,10 @@ public:
 	 */
     void bass_cut(float n)
     {
+		if (infinite) return;
         n = constrain(n, 0.0f, 1.0f);
         n = 2.0f * n - (n*n);
+		bassCut_k_tmp = -n;
         __disable_irq();
         bassCut_k = -n;
         __enable_irq();
@@ -201,15 +209,45 @@ public:
 		lfo.setDepth(d);
 		__enable_irq();	
 	}
-
+	typedef enum
+	{
+		BYPASS_MODE_PASS,		// pass the input signal to the output
+		BYPASS_MODE_OFF,		// mute the output
+		BYPASS_MODE_TRAILS		// mutes the input only
+	}bypass_mode_t;
+	void bypass_setMode(bypass_mode_t m)
+	{
+		if (m <= BYPASS_MODE_TRAILS) bp_mode = m;
+	}
+	bypass_mode_t bypass_geMode() {return bp_mode;}
 	bool bypass_get(void) {return bp;}
-    void bypass_set(bool state) {bp = state;}
+    void bypass_set(bool state) 
+	{
+		if (bp == state) return;
+		bp = state;
+		if (bp)
+		{
+			__disable_irq();
+			memCleanupStart = 0;
+			memCleanupEnd = memCleanupStep;
+			__enable_irq();
+			freeze(false);
+		}
+		else
+		{
+			__disable_irq();
+			inputGainSet = inputGain_tmp;
+			__enable_irq();
+		}
+	}
     bool bypass_tgl(void) 
     {
-        bp ^= 1; 
+		bypass_set(bp ^ 1);
         return bp;
     }
-
+	void freeze(bool state);
+    bool freeze_tgl() {freeze(infinite^1); return infinite;}
+    bool freeze_get() {return infinite;}
 	uint32_t tap_tempo(bool avg=true)
 	{
 		int32_t delta;
@@ -243,7 +281,6 @@ public:
 		}
 		return tempo_ticks;
 	} 
-
 private:
 	audio_block_f32_t *inputQueueArray[2];
 
@@ -264,15 +301,19 @@ private:
 	AudioBasicLfo lfo = AudioBasicLfo(0.0f, lfo_ampl);
 	bool psram_mode;
 	bool memsetup_done = false;
-	bool bp = false;
+	bool bp = true;
+	bypass_mode_t bp_mode = BYPASS_MODE_TRAILS;
 	bool cleanup_done = false;
-	
+	bool infinite = false;
+	bool extInputMode = false; // external input via pointers passed to constructor
+
 	static constexpr float32_t feedb_max = 0.96f;
 	float32_t feedb = 0;
 	float32_t hp_feedb_limit = 1.0f;
     float32_t wet_gain;
     float32_t dry_gain;
-	float32_t input_attn = 1.0f;
+	float32_t inputGainSet = 1.0f;
+	float32_t inputGain = 1.0f;
 	float32_t trebleCut_k = 1.0f;
 	float32_t bassCut_k = 0.0f;
 	float32_t treble_k = 1.0f;
@@ -282,11 +323,24 @@ private:
 	static const uint32_t dly_time_min = 128;
 	bool initialized = false;
 	
+	// freeze variables
+	float32_t freeze_ingain = 0.00f;
+	float32_t inputGain_tmp = 1.0f;
+	float32_t bassCut_k_tmp = 0.0f;
+	float32_t trebleCut_k_tmp = 1.0f;
+	float32_t feedb_tmp = 0;
+
 	bool tap_active = false;
 	uint32_t tap_counter = 0;
 	uint32_t tap_counter_last=0, tap_counter_new=0;
 	static const uint32_t tap_counter_max = 3000*AUDIO_SAMPLE_RATE; // 3 sec
 	static const int32_t tap_counter_deltamax = 0.3f*AUDIO_SAMPLE_RATE_EXACT;
+
+	bool memCleanup(void);
+	void begin(uint32_t dly_range_ms, bool use_psram);
+	const uint32_t memCleanupStep = 2048;
+	uint32_t memCleanupStart = 0;
+	uint32_t memCleanupEnd = memCleanupStep;
 };
 
 #endif // _EFFECT_DELAYSTEREO_H_
