@@ -59,6 +59,7 @@ public:
 		tone(1.0f);
 		hpPost_k = omega(GBOOST_BOTTOM_MINF);
 		lp2_k = omega(GBOOST_LP2_F);
+		gainRange = 4.0f;
 	}
 	void drive(float32_t value)
 	{
@@ -68,6 +69,27 @@ public:
 		gainSet = value;
 		__enable_irq();
 	}
+	/**
+	 * @brief Normalized drive, scaled to 1.0 ... gainRange value
+	 * 
+	 * @param value 0.0f - 1.0f
+	 */
+	void drive_normalized(float32_t value)
+	{
+		value = fabs(value);
+		value = constrain(value, 0.0f, 1.0f);
+		value = 1.0f + value * upsample_k * gainRange;
+		__disable_irq()
+		gainSet = value;
+		__enable_irq();
+	}	
+	void driveRange(float32_t value)
+	{
+		__disable_irq()
+		gainRange = value;
+		__enable_irq();		
+	}
+
 	void bottom(float32_t bottom);
 	void tone(float32_t t);
 	void bias(float32_t b)
@@ -146,8 +168,8 @@ private:
 	float32_t dryGain = 0.0f;
 	float32_t wetGain = 1.0f;
 	float32_t  DCbias = 0.175f;
-
-    float32_t gainSet = 1.0f;
+	float32_t gainRange = 4.0f;
+    float32_t gainSet = 1.0f; // gain is in range 0.0 to 1.0, scaled to 0.0 to gainRange
     float32_t gain = 0.0f;
 	float32_t gain_hp = 1.0f;
     float32_t levelSet = 1.0f;

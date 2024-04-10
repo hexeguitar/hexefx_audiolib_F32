@@ -41,39 +41,44 @@ public:
 	void update()
 	{
 		audio_block_f32_t *blockLa, *blockRa, *blockLb, *blockRb;
-		audio_block_f32_t *blockOutLa, *blockOutRa,*blockOutLb, *blockOutRb;
+		audio_block_f32_t *blockOutLa, *blockOutRa,*blockOutLb, *blockOutRb, *blockZero;
+
+		blockZero = AudioStream_F32::allocate_f32();
+		if(!blockZero) return;
+		memset(&blockZero->data[0], 0, blockZero->length*sizeof(float32_t));
+
+
 		blockLa = AudioStream_F32::receiveReadOnly_f32(0);
 		blockRa = AudioStream_F32::receiveReadOnly_f32(1);
 		blockLb = AudioStream_F32::receiveReadOnly_f32(2);
 		blockRb = AudioStream_F32::receiveReadOnly_f32(3);
 
-		if (!blockLa || !blockRa || !blockLb || !blockRb)
-		{
-			if (blockLa) AudioStream_F32::release(blockLa);
-			if (blockRa)  AudioStream_F32::release(blockRa);
-			if (blockLb) AudioStream_F32::release(blockLb);
-			if (blockRb)  AudioStream_F32::release(blockRb);			
-			return;
-		}
+		if (!blockLa) blockLa = blockZero;
+		if (!blockLb) blockLb = blockZero;
+		if (!blockRa) blockRa = blockZero;
+		if (!blockRb) blockRb = blockZero;
+
 		// max A, B mited
 		if (gainA == 1.0f)
 		{
 			AudioStream_F32::transmit(blockLa, 0);
 			AudioStream_F32::transmit(blockRa, 1);
-			AudioStream_F32::release(blockLa);
-			AudioStream_F32::release(blockRa);
-			AudioStream_F32::release(blockLb);
-			AudioStream_F32::release(blockRb);
+			if (blockLa != blockZero) AudioStream_F32::release(blockLa);
+			if (blockRa != blockZero) AudioStream_F32::release(blockRa);
+			if (blockLb != blockZero) AudioStream_F32::release(blockLb);
+			if (blockRb != blockZero) AudioStream_F32::release(blockRb);
+			AudioStream_F32::release(blockZero);
 			return;
 		}
 		if (gainB == 1.0f)
 		{
 			AudioStream_F32::transmit(blockLb, 0);
 			AudioStream_F32::transmit(blockRb, 1);
-			AudioStream_F32::release(blockLa);
-			AudioStream_F32::release(blockRa);
-			AudioStream_F32::release(blockLb);
-			AudioStream_F32::release(blockRb);
+			if (blockLa != blockZero) AudioStream_F32::release(blockLa);
+			if (blockRa != blockZero) AudioStream_F32::release(blockRa);
+			if (blockLb != blockZero) AudioStream_F32::release(blockLb);
+			if (blockRb != blockZero) AudioStream_F32::release(blockRb);
+			AudioStream_F32::release(blockZero);
 			return;
 		}
 		blockOutLa = AudioStream_F32::allocate_f32();
@@ -97,14 +102,16 @@ public:
 		arm_add_f32(blockOutRa->data, blockOutRb->data, blockOutRa->data, blockOutRa->length);
 		AudioStream_F32::transmit(blockOutLa, 0);
 		AudioStream_F32::transmit(blockOutRa, 1);
-		AudioStream_F32::release(blockLa);
-		AudioStream_F32::release(blockRa);
-		AudioStream_F32::release(blockLb);
-		AudioStream_F32::release(blockRb);
+		if (blockLa != blockZero) AudioStream_F32::release(blockLa);
+		if (blockRa != blockZero) AudioStream_F32::release(blockRa);
+		if (blockLb != blockZero) AudioStream_F32::release(blockLb);
+		if (blockRb != blockZero) AudioStream_F32::release(blockRb);
+		AudioStream_F32::release(blockZero);
 		AudioStream_F32::release(blockOutLa);
 		AudioStream_F32::release(blockOutRa);
 		AudioStream_F32::release(blockOutLb);
-		AudioStream_F32::release(blockOutRb);	
+		AudioStream_F32::release(blockOutRb);
+
 	}
 private:
 	audio_block_f32_t *inputQueueArray_f32[4];

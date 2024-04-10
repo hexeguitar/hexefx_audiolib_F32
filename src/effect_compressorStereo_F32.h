@@ -18,6 +18,23 @@
 
 #include <arm_math.h> //ARM DSP extensions.  https://www.keil.com/pack/doc/CMSIS/DSP/html/index.html
 #include <AudioStream_F32.h>
+#include "basic_DSPutils.h"
+
+// ranges used for normalized parameters. 
+// input is 0.0f to 1.0f, output RANGE_MIN to RANGE_MAX
+#define COMPRESSOR_PREGAIN_RANGE_MIN	(0.0f)
+#define COMPRESSOR_PREGAIN_RANGE_MAX	(4.0f)
+#define COMPRESSOR_POSTGAIN_RANGE_MIN	(0.0f)
+#define COMPRESSOR_POSTGAIN_RANGE_MAX	(4.0f)
+#define COMPRESSOR_ATTACK_RANGE_MIN		(0.001f)
+#define COMPRESSOR_ATTACK_RANGE_MAX		(0.1f)
+#define COMPRESSOR_RELEASE_RANGE_MIN	(0.1f)
+#define COMPRESSOR_RELEASE_RANGE_MAX	(1.0f)
+#define COMPRESSOR_THRES_RANGE_MIN		(0.0f)
+#define COMPRESSOR_THRES_RANGE_MAX		(-40.0f)
+#define COMPRESSOR_RATIO_RANGE_MIN		(0.0f)
+#define COMPRESSOR_RATIO_RANGE_MAX		(10.0f)
+
 
 class AudioEffectCompressorStereo_F32 : public AudioStream_F32
 {
@@ -281,29 +298,47 @@ public:
 		arm_biquad_cascade_df1_init_f32(&hp_filt_structR, hp_nstages, hp_coeff, hp_stateR);
 	}
 	void setPreGain(float g) { pre_gain = g; }
+	void setPreGain_normalized(float g) { pre_gain = map_sat(g, 0.0f, 1.0f, COMPRESSOR_PREGAIN_RANGE_MIN, COMPRESSOR_PREGAIN_RANGE_MAX); }
 	void setPreGain_dB(float gain_dB) { setPreGain(pow(10.0f, gain_dB / 20.0f)); }
 	void setPostGain(float g) { post_gain = g; }
+	void setPostGain_normalized(float g) { post_gain = map_sat(g, 0.0f, 1.0f, COMPRESSOR_POSTGAIN_RANGE_MIN, COMPRESSOR_POSTGAIN_RANGE_MAX); }
 	void setPostGain_dB(float gain_dB) { setPostGain(pow(10.0f, gain_dB / 20.0f)); }	
+	
 	void setCompressionRatio(float cr)
 	{
 		comp_ratio = max(0.001f, cr); // limit to positive values
 		updateThresholdAndCompRatioConstants();
 	}
+	void setCompressionRatio_normalized(float cr)
+	{
+		cr = map_sat(cr, 0.0f, 1.0f, COMPRESSOR_RATIO_RANGE_MIN, COMPRESSOR_RATIO_RANGE_MAX);
+		setCompressionRatio(cr);
+	}
+
 	void setAttack_sec(float a)
 	{
 		attack_sec = a;
 		attack_const = expf(-1.0f / (attack_sec * fs_Hz)); // expf() is much faster than exp()
-
 		// also update the time constant for the envelope extraction
 		setLevelTimeConst_sec(min(attack_sec, release_sec) / 5.0f); // make the level time-constant one-fifth the gain time constants
 	}
+	void setAttack_normalized(float a)
+	{
+		a = map_sat(a, 0.0f, 1.0f, COMPRESSOR_ATTACK_RANGE_MIN, COMPRESSOR_ATTACK_RANGE_MAX);
+		setAttack_sec(a);
+	}
+
 	void setRelease_sec(float r)
 	{
 		release_sec = r;
 		release_const = expf(-1.0f / (release_sec * fs_Hz)); // expf() is much faster than exp()
-
 		// also update the time constant for the envelope extraction
 		setLevelTimeConst_sec(min(attack_sec, release_sec) / 5.0f); // make the level time-constant one-fifth the gain time constants
+	}
+	void setRelease_normalized(float r)
+	{
+		r = map_sat(r, 0.0f, 1.0f, COMPRESSOR_RELEASE_RANGE_MIN, COMPRESSOR_RELEASE_RANGE_MAX);
+		setRelease_sec(r);
 	}
 	void setLevelTimeConst_sec(float t_sec)
 	{
@@ -316,6 +351,12 @@ public:
 		thresh_dBFS = val;
 		setThreshPow(pow(10.0f, thresh_dBFS / 10.0f));
 	}
+	void setThresh_normalized(float val)
+	{
+		val = map_sat(val, 0.0f, 1.0f, COMPRESSOR_THRES_RANGE_MIN, COMPRESSOR_THRES_RANGE_MAX);
+		setThresh_dBFS(val);
+	}
+
 	void enableHPFilter(boolean flag) { use_HP_prefilter = flag; };
 
 	// methods to return information about this module

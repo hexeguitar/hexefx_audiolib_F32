@@ -198,116 +198,179 @@
 
 #define WM8731_REG_ACTIVE					(9)
 #define WM8731_REG_RESET					(15)
-
-bool AudioControlWM8731_F32::enable(bit_depth_t bits, uint8_t addr)
+// ----------------------------------------------------------------------------------
+bool AudioControlWM8731_F32::enable(bit_depth_t bits, TwoWire *i2cBus, uint8_t addr)
 {
+	_wire = i2cBus;
 	i2c_addr = addr;
-	Wire.begin();
+
+	_wire->begin();
 	delay(5);
 	if (!write(WM8731_REG_RESET, 0))
 	{
 		return false; // no WM8731 chip responding
 	}
+		
 	write(WM8731_REG_INTERFACE, WM8731_BITS_FORMAT(WM8731_FORMAT_I2S_MSB_LEFT) | 
-							WM8731_BITS_IWL(bits)); // I2S, x bit, MCLK slave
-	write(WM8731_REG_SAMPLING, 0x20);						   // 256*Fs, 44.1 kHz, MCLK/1
+								WM8731_BITS_IWL(bits)); // I2S, x bit, MCLK slave
+	
+	write(WM8731_REG_SAMPLING, 	WM8731_BITS_USB_NORMAL(0)	|	// normal mode
+								WM8731_BITS_BOSR(0)			|	// 256*fs
+								WM8731_BITS_SR(8)			|	// 44.1kHz
+								WM8731_BITS_CLKIDIV2(0)		|	// MCLK/1
+								WM8731_BITS_CLKODIV2(0));
 
-	// In order to prevent pops, the DAC should first be soft-muted (DACMU),
-	// the output should then be de-selected from the line and headphone output
-	// (DACSEL), then the DAC powered down (DACPD).
-
-	write(WM8731_REG_DIGITAL, 0x08); // DAC soft mute
+	write(WM8731_REG_DIGITAL, WM8731_BITS_DACMU(1)); 	// Soft mute DAC
 	write(WM8731_REG_ANALOG, 0x00);	 // disable all
-
 	write(WM8731_REG_POWERDOWN, 0x00); // codec powerdown
-
 	write(WM8731_REG_LHEADOUT, 0x80); // volume off
 	write(WM8731_REG_RHEADOUT, 0x80);
-
-	delay(100); // how long to power up?
-
+	delay(300);
 	write(WM8731_REG_ACTIVE, 1);
 	delay(5);
-	write(WM8731_REG_DIGITAL, 0x00); // DAC unmuted
-	write(WM8731_REG_ANALOG, 0x10);	 // DAC selected
-
+	write(WM8731_REG_DIGITAL, WM8731_BITS_DACMU(0)); 	// DAC unmuted
+	write(WM8731_REG_ANALOG, WM8731_BITS_DACSEL(1));	 // DAC selected
 	return true;
 }
-
+// ----------------------------------------------------------------------------------
 void AudioControlWM8731_F32::dac_mute(bool m)
 {
-	write(WM8731_REG_DIGITAL, m ? WM8731_BITS_DACMU(1) : WM8731_BITS_DACMU(0)); // DAC soft mute
+	modify(WM8731_REG_DIGITAL, m ? WM8731_BITS_DACMU(1) : WM8731_BITS_DACMU(0), WM8731_BITS_DACMU_MASK);
+	//write(WM8731_REG_DIGITAL, ); // DAC soft mute
 	DACmute = m;
 }
-
-void AudioControlWM8731_F32::HPfilter(bool state)
+// ----------------------------------------------------------------------------------
+void AudioControlWM8731_F32::hp_filter(bool state)
 {
-	write(WM8731_REG_DIGITAL, WM8731_BITS_DACMU(DACmute) | WM8731_BITS_ADCHPD(state));
+	modify(WM8731_REG_DIGITAL, WM8731_BITS_ADCHPD(state), WM8731_BITS_ADCHPD_MASK);
+	//write(WM8731_REG_DIGITAL, WM8731_BITS_DACMU(DACmute) | WM8731_BITS_ADCHPD(state));
 }
-
-bool AudioControlWM8731_F32::write(unsigned int reg, unsigned int val)
+// ----------------------------------------------------------------------------------
+// Freeze the HP filter
+void AudioControlWM8731_F32::dcbias_store(bool state)
 {
+	modify(WM8731_REG_DIGITAL, WM8731_BITS_HPOR(state), WM8731_BITS_HPOR_MASK);
+}
+// ----------------------------------------------------------------------------------
+// Mute both Line inputs
+void AudioControlWM8731_F32::lineIn_mute(bool m)
+{
+	modify(WM8731_REG_LLINEIN, WM8731_BITS_LINMUTE(m), WM8731_BITS_LINMUTE_MASK);
+	modify(WM8731_REG_RLINEIN, WM8731_BITS_RINMUTE(m), WM8731_BITS_RINMUTE_MASK);
+}
+// ----------------------------------------------------------------------------------
+// Enable/Disable DAC output mixer switch
+void AudioControlWM8731_F32::dac_enable(bool en)
+{
+	modify(WM8731_REG_ANALOG, WM8731_BITS_DACSEL(en), WM8731_BITS_DACSEL_MASK);
+}
+// ----------------------------------------------------------------------------------
+// Enable Dry (Bypass) output mixer switch
+void AudioControlWM8731_F32::dry_enable(bool en)
+{
+	modify(WM8731_REG_ANALOG, WM8731_BITS_BYPASS(en), WM8731_BITS_BYPASS_MASK);
+	dry_sig = en;
+}
+// ----------------------------------------------------------------------------------
+// analog bypass switch
+void AudioControlWM8731_F32::bypass_set(bool b)
+{
+	uint8_t bp_state = ((((uint8_t)dry_sig)<<1) & 0x01) | b;
+	switch(bp_state)
+	{
+		case 0b00:	// Dry Off, Wet on -> pass Wet only
+		case 0b11:
+			dry_enable(false);
+			dac_enable(true);
+			break;
+		case 0b01:	// dry OFF, bypass ON -> pass Dry only
+			dry_enable(false);
+			dac_enable(true);
+			break;
+		case 0b10:	// Dry on, Wet on
+			dry_enable(true);
+			dac_enable(true);
+			break;
+		default: break;
+	}
+}
+// ----------------------------------------------------------------------------------
+bool AudioControlWM8731_F32::write(uint16_t regAddr, uint16_t val)
+{
+	reg[regAddr] = val;
 	int attempt = 0;
 	while (1)
 	{
 		attempt++;
-		Wire.beginTransmission(i2c_addr);
-		Wire.write((reg << 1) | ((val >> 8) & 1));
-		Wire.write(val & 0xFF);
-		int status = Wire.endTransmission();
+		_wire->beginTransmission(i2c_addr);
+		_wire->write((regAddr << 1) | ((val >> 8) & 1));
+		_wire->write(val & 0xFF);
+		int status = _wire->endTransmission();
 		if (status == 0) return true;
 		if (attempt >= 12)  return false;
 		delayMicroseconds(80);
 	}
 }
-
-
-bool AudioControlWM8731_F32::volumeInteger(unsigned int n)
+// ----------------------------------------------------------------------------------
+uint16_t AudioControlWM8731_F32::modify(uint16_t regAddr, uint16_t val, uint16_t iMask)
+{
+	reg[regAddr]  = (reg[regAddr] & (~iMask)) | val;
+	if (!write(regAddr, reg[regAddr])) return 0;
+	return reg[regAddr];
+}
+// ----------------------------------------------------------------------------------
+// Set the headphone volume
+bool AudioControlWM8731_F32::hp_volumeInteger(uint16_t n)
 {
 	// n = 127 for max volume (+6 dB)
 	// n = 48 for min volume (-73 dB)
 	// n = 0 to 47 for mute
-	if (n > 127)
-		n = 127;
-	// Serial.print("volumeInteger, n = ");
-	// Serial.println(n);
+	if (n > 127) n = 127;
 	write(WM8731_REG_LHEADOUT, n | 0x180);
 	write(WM8731_REG_RHEADOUT, n | 0x80);
 	return true;
 }
-
+// ----------------------------------------------------------------------------------
 bool AudioControlWM8731_F32::inputLevel(float n)
 {
 	// range is 0x00 (min) - 0x1F (max)
-
 	int _level = int(n * 31.f);
-
 	_level = _level > 0x1F ? 0x1F : _level;
 	write(WM8731_REG_LLINEIN, _level);
 	write(WM8731_REG_RLINEIN, _level);
 	return true;
 }
-
-bool AudioControlWM8731_F32::inputSelect(input_select_t n)
+// ----------------------------------------------------------------------------------
+bool AudioControlWM8731_F32::inputLevelraw(uint8_t n)
 {
-	if (n == INPUT_SELECT_LINEIN) 	write(WM8731_REG_ANALOG, 0x12);
-	else if (n == INPUT_SELECT_MIC)	write(WM8731_REG_ANALOG, 0x15);
+	// range is 0x00 (min) - 0x1F (max)
+	n = n > 0x1F ? 0x1F : n;
+	write(WM8731_REG_LLINEIN, n);
+	write(WM8731_REG_RLINEIN, n);
+	return true;
+}
+// ----------------------------------------------------------------------------------
+bool AudioControlWM8731_F32::inputSelect(int n)
+{
+	if (n == AUDIO_INPUT_LINEIN) modify(WM8731_REG_ANALOG, WM8731_BITS_INSEL(0), WM8731_BITS_INSEL_MASK); 	
+	else if (n == AUDIO_INPUT_MIC)	modify(WM8731_REG_ANALOG, WM8731_BITS_INSEL(1), WM8731_BITS_INSEL_MASK); 
 	else return false;
 	return true;
 }
 
 /******************************************************************/
 
-bool AudioControlWM8731_F32_master::enable(bit_depth_t bits, uint8_t addr)
+bool AudioControlWM8731_F32_master::enable(bit_depth_t bits, TwoWire *i2cBus, uint8_t addr)
 {
+	_wire = i2cBus;
 	i2c_addr = addr;
-	Wire.begin();
+	_wire->begin();
 	delay(5);
 	// write(WM8731_REG_RESET, 0);
 	write(WM8731_REG_INTERFACE, 
 			WM8731_BITS_FORMAT(WM8731_FORMAT_I2S_MSB_LEFT) | 
 			WM8731_BITS_IWL(bits)|
-			WM8731_BITS_MS(1)); 		// I2S, x bit, MCLK slave
+			WM8731_BITS_MS(1)); 		// I2S, x bit, MCLK master
 	write(WM8731_REG_SAMPLING, 0x20);  // 256*Fs, 44.1 kHz, MCLK/1
 
 	// In order to prevent pops, the DAC should first be soft-muted (DACMU),

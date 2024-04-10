@@ -280,7 +280,8 @@ public:
 			delay(tempo_ticks);
 		}
 		return tempo_ticks;
-	} 
+	}
+	bool is_initialized() {return initialized;}
 private:
 	audio_block_f32_t *inputQueueArray[2];
 

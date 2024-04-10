@@ -19,14 +19,16 @@
 #define _CONTROL_WM8731_F32_H_
 
 #include <Arduino.h>
+#include <Wire.h>
+#include "AudioControl.h"
 
 #define WM8731_I2C_ADDR_CSB0 0x1A
 #define WM8731_I2C_ADDR_CSB1 0x1B
 
-class AudioControlWM8731_F32 
+class AudioControlWM8731_F32 : public AudioControl
 {
 public:	
-	AudioControlWM8731_F32(){};
+	AudioControlWM8731_F32() {}
 	
 	typedef enum
 	{ 
@@ -36,34 +38,50 @@ public:
 		I2S_BITS_32
 	}bit_depth_t;
 
-	typedef enum
+	bool enable()
 	{
-		INPUT_SELECT_LINEIN = 0,
-		INPUT_SELECT_MIC
-	}input_select_t;
-
-	bool enable(bit_depth_t bits = I2S_BITS_16, uint8_t addr=WM8731_I2C_ADDR_CSB0);
+		return enable(I2S_BITS_32, &Wire, WM8731_I2C_ADDR_CSB0);
+	}
+	bool enable(bit_depth_t bits, TwoWire *i2cBus, uint8_t addr);
 	bool disable(void) { return false; }
-	bool volume(float n) { return volumeInteger(n * 80.0f + 47.499f); }
+	bool volume(float n) { return hp_volumeInteger(n * 80.0f + 47.499f); }
 	bool inputLevel(float n); // range: 0.0f to 1.0f
-	bool inputSelect(input_select_t n=INPUT_SELECT_LINEIN);
+	bool inputLevelraw(uint8_t n); // direc value 0-31
+	bool inputSelect(int n=AUDIO_INPUT_LINEIN);
+
+	void lineIn_mute(bool m);
+	void dry_enable(bool en); // bypass without muting the DAC
+	void hp_filter(bool state);
+	void dcbias_store(bool state);
 	void dac_mute(bool m);
-	void HPfilter(bool state);
+	void dac_enable(bool en);
+	void bypass_set(bool b);
+	bool bypass_get() {return bp;}
+	bool bypass_tgl() {bp ^= 1; bypass_set(bp); return bp;}
 
 protected:
-	bool write(unsigned int reg, unsigned int val);
-	bool volumeInteger(unsigned int n); // range: 0x2F to 0x7F
+	bool write(uint16_t regAddr, uint16_t val);
+	uint16_t read(uint16_t reg);
+	uint16_t modify(uint16_t reg, uint16_t val, uint16_t iMask);
+	bool hp_volumeInteger(uint16_t n); // range: 0x2F to 0x7F
 private:
-	uint8_t bit_depth = I2S_BITS_16;
+	uint16_t reg[16];
+	uint8_t bit_depth = I2S_BITS_32;
 	uint8_t i2c_addr;
 	bool DACmute = false;
+	TwoWire *_wire;
+	bool dry_sig = false;
+	bool bp = false; // used for analog bypass
 };
 
 class AudioControlWM8731_F32_master : public AudioControlWM8731_F32
 {
 public:
-	bool enable(bit_depth_t bits = I2S_BITS_16, uint8_t addr=WM8731_I2C_ADDR_CSB0);
+	bool enable(bit_depth_t bits = I2S_BITS_32, TwoWire *i2cBus = &Wire, uint8_t addr=WM8731_I2C_ADDR_CSB0);
 private:
+	
 	uint8_t i2c_addr;
+	TwoWire *_wire;
+	bool dry_sig = false;
 };
 #endif // _CONTROL_WM8731_EXTENDED_H_

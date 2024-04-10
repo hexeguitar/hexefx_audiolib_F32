@@ -222,6 +222,8 @@ void AudioFilterIRCabsim_F32::ir_load(uint8_t idx)
 
 	delay.reset();
 	ir_loaded = 1;
+	ir_loadState = IR_LOAD_FINISHED;
+	
 	AudioInterrupts();
 	#endif
 

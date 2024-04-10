@@ -61,4 +61,17 @@ inline void memcpyDeinterleave_f32(float32_t *src, float32_t *dstA, float32_t *d
 	}
 }
 inline void memcpyDeinterleave_f32(float32_t *src, float32_t *dstA, float32_t *dstB, int16_t sz);
+
+
+// added input saturation
+template <class T, class A, class B, class C, class D>
+T map_sat(T x, A in_min, B in_max, C out_min, D out_max, typename std::enable_if<std::is_floating_point<T>::value >::type* = 0)
+{
+	if (x <= in_min) return out_min;
+	else if (x >= in_max) return out_max;
+	// when the input is a float or double, do all math using the input's type
+	return (x - (T)in_min) * ((T)out_max - (T)out_min) / ((T)in_max - (T)in_min) + (T)out_min;
+}
+
+
 #endif // _BASIC_DSPUTILS_H_

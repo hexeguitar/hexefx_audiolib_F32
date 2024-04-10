@@ -3,7 +3,10 @@
 
 #include "control_WM8731_F32.h"
 #include "control_SGTL5000_F32.h"
+#include "control_ES8388_F32.h"
 
+#include "input_i2s_ext_F32.h"
+#include "output_i2s_ext_F32.h" // extended version
 #include "input_i2s2_F32.h"
 #include "output_i2s2_F32.h"
 

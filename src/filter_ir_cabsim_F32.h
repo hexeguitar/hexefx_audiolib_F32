@@ -78,6 +78,7 @@ public:
 		return doubleTrack;
 	}
 	bool doubler_get() {return doubleTrack;}
+	bool init_done() {return initialized;}
 private:
     audio_block_f32_t *inputQueueArray_f32[2];
 	uint16_t block_size = AUDIO_BLOCK_SAMPLES;

@@ -34,6 +34,7 @@ public:
 		audio_block_f32_t *blockL, *blockR;
 		blockL = AudioStream_F32::receiveWritable_f32(0);
 		blockR = AudioStream_F32::receiveWritable_f32(1);
+		float gL, gR;
 		if (!blockL || !blockR)
 		{
 			if (blockL)
@@ -44,9 +45,10 @@ public:
 		}
 		gainL += (gainLset - gainL) * 0.25f;
 		gainR += (gainRset - gainR) * 0.25f;
-
-		arm_scale_f32(blockL->data, gainL, blockL->data, blockL->length); // use ARM DSP for speed!
-		arm_scale_f32(blockR->data, gainR, blockR->data, blockR->length);
+		if (phase_flip)  { gL = -gainL; gR = -gainR; }
+		else 			 { gL = gainL;	gR = gainR; }
+		arm_scale_f32(blockL->data, gL, blockL->data, blockL->length); // use ARM DSP for speed!
+		arm_scale_f32(blockR->data, gR, blockR->data, blockR->length);
 		AudioStream_F32::transmit(blockL, 0);
 		AudioStream_F32::transmit(blockR, 1);
 		AudioStream_F32::release(blockL);
@@ -90,11 +92,19 @@ public:
 
 	}
 	float32_t getPan() { return pan;}
+	void phase_inv(bool inv)
+	{
+		__disable_irq();
+		phase_flip = inv;
+		__enable_irq();	
+	}
+
 private:
 	audio_block_f32_t *inputQueueArray_f32[2]; // memory pointer for the input to this module
 	float32_t gain = 1.0f;						   // default value
 	float32_t gainL, gainR, gainLset, gainRset;
 	float32_t pan, panL, panR;
+	bool phase_flip = false;
 };
 
 #endif

@@ -38,19 +38,27 @@ AudioEffectDelayStereo_F32::AudioEffectDelayStereo_F32(uint32_t dly_range_ms, bo
 
 void AudioEffectDelayStereo_F32::begin(uint32_t dly_range_ms, bool use_psram)
 {
+	initialized = false;
 	// failsafe if psram is required but not found
 	// limit the delay time to 500ms (88200 bytes at 44.1kHz)
+	psram_mode = use_psram;
+	#if ARDUINO_TEENSY41
 	if (psram_mode && external_psram_size == 0)
 	{
 		psram_mode = false;
-		if (dly_range_ms > 500) dly_range_ms = 500;
+		if (dly_range_ms > 200) dly_range_ms = 200;
 	}	
+	#else
+		psram_mode = false;
+		if (dly_range_ms > 200) dly_range_ms = 200;	
+
+	#endif
 	bool memOk = true;
-	dly_length = ((float32_t)(dly_range_ms+500)/1000.0f) * AUDIO_SAMPLE_RATE_EXACT;	
-	if (!dly0a.init(dly_length, use_psram)) memOk = false;
-	if (!dly0b.init(dly_length, use_psram)) memOk = false;
-	if (!dly1a.init(dly_length, use_psram)) memOk = false;
-	if (!dly1b.init(dly_length, use_psram)) memOk = false;
+	dly_length = ((float32_t)(dly_range_ms)/1000.0f) * AUDIO_SAMPLE_RATE_EXACT;	
+	if (!dly0a.init(dly_length, psram_mode)) memOk = false;
+	if (!dly0b.init(dly_length, psram_mode)) memOk = false;
+	if (!dly1a.init(dly_length, psram_mode)) memOk = false;
+	if (!dly1b.init(dly_length, psram_mode)) memOk = false;
 	flt0L.init(BASS_LOSS_FREQ, &bassCut_k, TREBLE_LOSS_FREQ, &trebleCut_k);
 	flt1L.init(BASS_LOSS_FREQ, &bass_k, TREBLE_LOSS_FREQ, &treble_k);
 	flt0R.init(BASS_LOSS_FREQ, &bassCut_k, TREBLE_LOSS_FREQ, &trebleCut_k);
@@ -254,6 +262,7 @@ void AudioEffectDelayStereo_F32::freeze(bool state)
  */
 bool AudioEffectDelayStereo_F32::memCleanup()
 {
+
 	static uint8_t dlyIdx = 0;
 	bool result = false;
 	if (dlyIdx == 0) // value 0 is used to reset the addr

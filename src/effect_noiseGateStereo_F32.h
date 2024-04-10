@@ -16,6 +16,16 @@
 #include <arm_math.h> //ARM DSP extensions.  for speed!
 #include <AudioStream_F32.h>
 
+// ranges used for normalized param settings
+#define NOISEGATE_THRES_MIN		(0.0f)
+#define NOISEGATE_THRES_MAX		(-100.0f)
+#define NOISEGATE_OPENT_MIN		(0.001f)
+#define NOISEGATE_OPENT_MAX		(0.1f)
+#define NOISEGATE_HOLDT_MIN		(0.001f)
+#define NOISEGATE_HOLDT_MAX		(0.1f)
+#define NOISEGATE_CLOSET_MIN	(0.001f)
+#define NOISEGATE_CLOSET_MAX	(0.1f)
+
 class AudioEffectNoiseGateStereo_F32 : public AudioStream_F32
 {
 public:
@@ -108,20 +118,40 @@ public:
 		// convert dbFS to linear value to comapre against later
 		linearThreshold = pow10f(dbfs / 20.0f);
 	}
+	void setThreshold_normalized(float dbfs)
+	{
+		dbfs = map_sat(dbfs, 0.0f, 1.0f, NOISEGATE_THRES_MIN, NOISEGATE_THRES_MAX);
+		setThreshold(dbfs);
+	}
 
 	void setOpeningTime(float timeInSeconds)
 	{
 		openingTimeConst = expf(-1.0f / (timeInSeconds * fs));
+	}
+	void setOpeningTime_normalized(float time)
+	{
+		time = map_sat(time, 0.0f, 1.0f, NOISEGATE_OPENT_MIN, NOISEGATE_OPENT_MAX);
+		setOpeningTime(time);
 	}
 
 	void setClosingTime(float timeInSeconds)
 	{
 		closingTimeConst = expf(-1.0f / (timeInSeconds * fs));
 	}
+	void setClosingTime_normalized(float time)
+	{
+		time = map_sat(time, 0.0f, 1.0f, NOISEGATE_CLOSET_MIN, NOISEGATE_CLOSET_MAX);
+		setClosingTime(time);
+	}
 
 	void setHoldTime(float timeInSeconds)
 	{
 		holdTimeNumSamples = timeInSeconds * fs;
+	}
+	void setHoldTime_normalized(float time)
+	{
+		time = map_sat(time, 0.0f, 1.0f, NOISEGATE_HOLDT_MIN, NOISEGATE_HOLDT_MAX);
+		setHoldTime(time);
 	}
 
 	bool infoIsOpen()

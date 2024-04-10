@@ -49,13 +49,20 @@ AudioEffectReverbSc_F32::AudioEffectReverbSc_F32(bool use_psram) : AudioStream_F
 	n_bytes = 0;
 	if (use_psram)	
 	{
+		#if ARDUINO_TEENSY41 
 		// no PSRAM detected - enter the memoery failsafe mode = fixed bypass
 		if (external_psram_size == 0) 
 		{
 			flags.mem_fail = 1;
+			initialised = true;
 			return;
 		}
 		aux_ = (float32_t *) extmem_malloc(aux_size_bytes);
+		#else
+			flags.mem_fail = 1;
+			initialised = true;
+			return;
+		#endif
 	}
 	else			
 	{
