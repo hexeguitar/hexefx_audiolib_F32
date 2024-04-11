@@ -420,21 +420,18 @@ bool AudioControlES8388_F32::enable(TwoWire *i2cBus, uint8_t addr, config_t cfg)
 	ctrlBus = i2cBus;
 	i2cAddr = addr;
 	ctrlBus->begin();
-	ctrlBus->setClock(100000);
-	bool reply = true;
-
-	reply = writeReg(ES8388_REG_MASTER_MODE_CTRL, 0x00);							 // set to slave mode
-	reply &= writeReg(ES8388_REG_CHIP_PWR_MAN, 0xF3);									 // power down
-	reply &=writeReg(ES8388_REG_DAC_CTRL21, ES8388_BIT_SLRCK);							 // DACLRC = ADCLRC
-	reply &=writeReg(ES8388_REG_CHIP_CTRL1, ES8388_VMIDSEL_5K | ES8388_BIT_ENREF);		 // 50k divider,
-	reply &=writeReg(ES8388_REG_CHIP_CTRL2, 0x40);										 // low power modes off, bit6 not defined? based on default value
-	reply &=writeReg(ES8388_REG_ADC_PWR_MAN, 0x00);										 // power up ADC, turn off the PDNMICB?
-	reply &=writeReg(ES8388_REG_DAC_PWR_MAN, ES8388_BIT_LOUT1_EN | ES8388_BIT_ROUT1_EN); // enable LR1
-	if (reply == false)
+	ctrlBus->setClock(100000);				 
+	if (!writeReg(ES8388_REG_MASTER_MODE_CTRL, 0x00))	// set to slave mode
 	{
-		DBG_SERIAL.println("Codec i2c error");
-		return false;
-	}
+		return false; // codec not found
+	}	
+	writeReg(ES8388_REG_CHIP_PWR_MAN, 0xF3);									 // power down
+	writeReg(ES8388_REG_DAC_CTRL21, ES8388_BIT_SLRCK);							 // DACLRC = ADCLRC
+	writeReg(ES8388_REG_CHIP_CTRL1, ES8388_VMIDSEL_5K | ES8388_BIT_ENREF);		 // 50k divider,
+	writeReg(ES8388_REG_CHIP_CTRL2, 0x40);										 // low power modes off, bit6 not defined? based on default value
+	writeReg(ES8388_REG_ADC_PWR_MAN, 0x00);										 // power up ADC, turn off the PDNMICB?
+	writeReg(ES8388_REG_DAC_PWR_MAN, ES8388_BIT_LOUT1_EN | ES8388_BIT_ROUT1_EN); // enable LR1
+
 	switch (cfg)
 	{
 	case ES8388_CFG_LINEIN_DIFF:
@@ -479,7 +476,7 @@ bool AudioControlES8388_F32::enable(TwoWire *i2cBus, uint8_t addr, config_t cfg)
 	optimizeConversion(0);
 	writeReg(ES8388_REG_CHIP_PWR_MAN, 0x00); // Power up DEM and STM
 	
-	// ALC config
+	// ALC config  - disabled for now, will be tested someday.. 
 	// writeReg(ES8388_REG_ADC_CTRL10, ES8388_ALCSEL(ES8388_ALCSEL_LR) |			// ALC OFF
 	// 									ES8388_MAXGAIN(ES8388_MAXGAIN_M0_5DB) | // max gain -0.5dB
 	// 									ES8388_MINGAIN(ES8388_MINGAIN_M12DB));	// min gain -12dB
@@ -555,7 +552,6 @@ uint8_t AudioControlES8388_F32::getInGain()
 void AudioControlES8388_F32::set_noiseGate(float thres)
 {
 	uint8_t thres_val = constrain(thres, 0.0f, 1.0f) * 31.99f;
-	DBG_SERIAL.printf("Gate: %d\r\n", thres_val);
 	writeReg(ES8388_REG_ADC_CTRL14, ES8388_NGTH(thres_val) | ES8388_NGG(ES8388_NGG_ADCMUTE)| ES8388_BIT_NGAT_EN);	
 }
 
