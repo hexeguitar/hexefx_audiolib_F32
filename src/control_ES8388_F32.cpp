@@ -432,7 +432,9 @@ bool AudioControlES8388_F32::enable(TwoWire *i2cBus, uint8_t addr, config_t cfg)
 	reply &=writeReg(ES8388_REG_DAC_PWR_MAN, ES8388_BIT_LOUT1_EN | ES8388_BIT_ROUT1_EN); // enable LR1
 	if (reply == false)
 	{
+#ifdef DBG_SERIAL
 		DBG_SERIAL.println("Codec i2c error");
+#endif
 		return false;
 	}
 	switch (cfg)
@@ -555,7 +557,9 @@ uint8_t AudioControlES8388_F32::getInGain()
 void AudioControlES8388_F32::set_noiseGate(float thres)
 {
 	uint8_t thres_val = constrain(thres, 0.0f, 1.0f) * 31.99f;
+#ifdef DBG_SERIAL
 	DBG_SERIAL.printf("Gate: %d\r\n", thres_val);
+#endif
 	writeReg(ES8388_REG_ADC_CTRL14, ES8388_NGTH(thres_val) | ES8388_NGG(ES8388_NGG_ADCMUTE)| ES8388_BIT_NGAT_EN);	
 }
 
