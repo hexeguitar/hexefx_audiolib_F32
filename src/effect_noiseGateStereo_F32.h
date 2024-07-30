@@ -86,7 +86,7 @@ public:
 		}		
 		//sum L + R
 		arm_add_f32(p_sideChain_inL, p_sideChain_inR, blockSideCh->data, blockSideCh->length);
-		arm_scale_f32(blockSideCh->data, 0.5f, blockSideCh->data, blockSideCh->length); // divide by 2
+		arm_scale_f32(blockSideCh->data, sideChain_gain * 0.5f, blockSideCh->data, blockSideCh->length); // divide by 2
 		
 		calcGain(blockSideCh, blockGain);
 		calcSmoothedGain(blockGain);
@@ -153,6 +153,10 @@ public:
 		time = map_sat(time, 0.0f, 1.0f, NOISEGATE_HOLDT_MIN, NOISEGATE_HOLDT_MAX);
 		setHoldTime(time);
 	}
+	void setSideChainGain(float g)
+	{
+		sideChain_gain = g;
+	}
 
 	bool infoIsOpen()
 	{
@@ -176,6 +180,7 @@ private:
 	float32_t fs = AUDIO_SAMPLE_RATE_EXACT;
 	float32_t* p_sideChain_inL = NULL;
 	float32_t* p_sideChain_inR = NULL;
+	float32_t sideChain_gain = 1.0f;;
 	float32_t linearThreshold;
 	float32_t prev_gain_dB = 0;
 	float32_t openingTimeConst, closingTimeConst;

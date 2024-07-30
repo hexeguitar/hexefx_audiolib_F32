@@ -29,6 +29,7 @@ public:
 	}
 	inline float process(float input)
 	{
+		if (bp) return input;
 		float tmp1, tmp2;
 		// smoothly update params
 		if (hidamp < (*hidampPtr))
@@ -64,6 +65,7 @@ public:
 		lpreg = 0.0f;
 		hpreg = 0.0f;
 	}
+	void bypass_set(bool state) { bp = state; reset();}
 private:
 	float lpreg;
 	float hpreg;
@@ -74,6 +76,7 @@ private:
 	float hp_f;
 	float lp_f;
 	static constexpr float upd_step = 0.02f;
+	bool bp = false;
 };
 
 

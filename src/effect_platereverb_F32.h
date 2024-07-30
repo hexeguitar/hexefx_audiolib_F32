@@ -292,7 +292,9 @@ public:
 	void chorus(float c)
 	{
 		c = map(c, 0.0f, 1.0f, 1.0f, 100.0f);
+		__disable_irq();
 		LFO_AMPLset = (uint32_t)c; 
+		__enable_irq();
 	}
 
 	/**
@@ -304,10 +306,12 @@ public:
 	{
 		if (flags.freeze) return; // do not update the shimmer if in freeze mode
 		s = constrain(s, 0.0f, 1.0f);
-		s = 2*s - s*s;	
+		s = 2*s - s*s;
+		__disable_irq();
 		pitchShimL.setMix(s);
 		pitchShimR.setMix(s);
 		shimmerRatio = s;
+		__enable_irq();
 	}
 	/**
 	 * @brief Sets the pitch of the shimmer effect
@@ -316,8 +320,10 @@ public:
 	 */
 	void shimmerPitch(float ratio)
 	{
+		__disable_irq();
 		pitchShimL.setPitch(ratio);
 		pitchShimR.setPitch(ratio);
+		__enable_irq();
 	}
 	/**
 	 * @brief Sets the shimmer effect pitch in semitones
@@ -326,9 +332,28 @@ public:
 	 */
 	void shimmerPitchSemitones(int8_t semitones)
 	{
+		__disable_irq();
 		pitchShimL.setPitchSemintone(semitones);
 		pitchShimR.setPitchSemintone(semitones);
+		__enable_irq();
 	}
+	/**
+	 * @brief shimemr pitch set using built in semitzone table
+	 * 
+	 * 
+	 * @param value float 0.0f to 1.0f
+	 */
+	void shimmerPitchNormalized(float32_t value)
+	{
+		value = constrain(value, 0.0f, 1.0f);
+		float32_t idx = map(value, 0.0f, 1.0f, 0.0f, (float32_t)sizeof(semitoneTable)+0.499f);
+		pitchShim_semit = semitoneTable[(uint8_t)idx];
+		__disable_irq();
+		pitchShimL.setPitchSemintone(pitchShim_semit);
+		pitchShimR.setPitchSemintone(pitchShim_semit);
+		__enable_irq();
+	}
+	int8_t shimmerPitch_get() {return pitchShim_semit;}
 	/**
 	 * @brief set the reverb pitch.  Range -12 to +24 
 	 * 
@@ -336,9 +361,28 @@ public:
 	 */
 	void pitchSemitones(int8_t semitones)
 	{
+		__disable_irq();
 		pitchL.setPitchSemintone(semitones);
 		pitchR.setPitchSemintone(semitones);
+		__enable_irq();
 	}
+	/**
+	 * @brief sets the reverb pitch using the built in table
+	 * 			input range is float 0.0 to 1.0
+	 * 
+	 * @param value  
+	 */
+	void pitchNormalized(float32_t value)
+	{
+		value = constrain(value, 0.0f, 1.0f);
+		float32_t idx = map(value, 0.0f, 1.0f, 0.0f, (float32_t)sizeof(semitoneTable)+0.499f);
+		pitch_semit = semitoneTable[(uint8_t)idx];
+		__disable_irq();
+		pitchL.setPitchSemintone(pitch_semit);
+		pitchR.setPitchSemintone(pitch_semit);
+		__enable_irq();
+	}
+	int8_t pitch_get() {return pitch_semit;}
 	/**
 	 * @brief Reverb pitch shifter dry/wet mixer
 	 * 
@@ -347,9 +391,11 @@ public:
 	void pitchMix(float s)
 	{
 		s = constrain(s, 0.0f, 1.0f);
+		__disable_irq();
 		pitchL.setMix(s);
 		pitchR.setMix(s);
 		pitchRatio = s;
+		__enable_irq();
 	}
 
 private:
@@ -451,6 +497,9 @@ private:
 	AudioBasicPitch	pitchShimL;
 	AudioBasicPitch	pitchShimR;
 
+	const int8_t semitoneTable[9] = {-12, -7, -5, -3, 0, 3, 5, 7, 12};
+	int8_t pitch_semit;
+	int8_t pitchShim_semit;
     const float rv_time_k_max = 0.97f;
     float rv_time_k, rv_time_k_tmp;         // reverb time coeff
     float rv_time_scaler;    // with high lodamp settings lower the max reverb time to avoid clipping

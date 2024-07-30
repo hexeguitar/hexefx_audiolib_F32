@@ -232,9 +232,13 @@ void AudioEffectDelayStereo_F32::freeze(bool state)
 	{
 		feedb_tmp = feedb;      // store the settings
 		inputGain_tmp = inputGainSet;
-		bassCut_k_tmp = bassCut_k;
-		trebleCut_k_tmp = trebleCut_k;
+		// bassCut_k_tmp = bassCut_k;
+		// trebleCut_k_tmp = trebleCut_k;
 		__disable_irq();
+		flt0R.bypass_set(true);
+		flt1R.bypass_set(true);
+		flt0L.bypass_set(true);
+		flt1L.bypass_set(true);
 		feedb = 1.0f; // infinite echo                                    
 		inputGainSet = freeze_ingain;
 		__enable_irq();
@@ -244,8 +248,12 @@ void AudioEffectDelayStereo_F32::freeze(bool state)
 		__disable_irq();
 		feedb = feedb_tmp;
 		inputGainSet = inputGain_tmp;
-		bassCut_k = bassCut_k_tmp;
-		trebleCut_k = trebleCut_k_tmp;
+		flt0R.bypass_set(false);
+		flt1R.bypass_set(false);
+		flt0L.bypass_set(false);
+		flt1L.bypass_set(false);		
+		// bassCut_k = bassCut_k_tmp;
+		// trebleCut_k = trebleCut_k_tmp;
 		__enable_irq();
 	}
 }

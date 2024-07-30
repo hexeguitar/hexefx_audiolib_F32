@@ -63,6 +63,8 @@ public:
 	friend class AudioOutputI2SQuad_F32;
 	friend class AudioInputI2SQuad_F32;
 	bool get_update_responsibility() { return update_responsibility;}
+	void set_channel_swap(bool sw) { channel_swap = sw ? 1 : 0;}
+	bool get_channel_swap() {return (bool)channel_swap;}
 protected:
 	AudioOutputI2S2_F32(int dummy): AudioStream_F32(2, inputQueueArray) {} // to be used only inside AudioOutputI2Sslave !!
 	static void config_i2s(void);
@@ -84,6 +86,7 @@ private:
 	static float sample_rate_Hz;
 	static int audio_block_samples;
 	volatile uint8_t enabled = 1;
+	uint8_t channel_swap = 0;
 };
  
 class AudioOutputI2S2slave_F32 : public AudioOutputI2S2_F32

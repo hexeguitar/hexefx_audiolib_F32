@@ -55,6 +55,8 @@ bool AudioEffectPlateReverb_F32::begin()
 	loop_allp_k = LOOP_ALLOP_COEFF;
 	rv_time_scaler = 1.0f;
 	rv_time_k = 0.2f;
+	pitch_semit = 0;
+	pitchShim_semit = 0;
 
 	if(!in_allp_1L.init(&in_allp_k)) return false;
 	if(!in_allp_2L.init(&in_allp_k)) return false;

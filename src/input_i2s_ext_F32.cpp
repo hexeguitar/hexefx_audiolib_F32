@@ -199,8 +199,8 @@ void AudioInputI2S_ext_F32::update(void)
 		__enable_irq();
 
 		// update_counter++; //I chose to update it in the ISR instead.
-		update_1chan(0, out_left);	// uses audio_block_samples and update_counter
-		update_1chan(1, out_right); // uses audio_block_samples and update_counter
+		update_1chan(0^channel_swap, out_left);	// uses audio_block_samples and update_counter
+		update_1chan(1^channel_swap, out_right); // uses audio_block_samples and update_counter
 	}
 	else if (new_left != NULL)
 	{

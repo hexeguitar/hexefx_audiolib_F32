@@ -27,6 +27,12 @@ Versatile stereo ping-pong delay with modulation.
 **AudioEffectNoiseGateStereo_F32**  
 Stereo noise gate with external SideChain input.  
 
+**AudioEffectGuitarBooster_F32**  
+Overdrive emulation using oversampled wave shaper, switchable octave up.  
+
+**AudioEffectWahMono_F32**  
+WAH pedal emulation including 8 models and versatile range handling.  
+
 **AudioFilterToneStackStereo_F32**  
 Stereo guitar tone stack (EQ) emulator.  
 
@@ -43,11 +49,19 @@ Simple 3 band (Treble, Mid, Bass) equalizer.
 **AudioEffectGainStereo_F32**  
 Stereo gain control (volume etc.)  
 
+**AudioSwitchSelectorStereo**  
+Stereo/mono signal selector.  
+
 
 ## I/O  
 **AudioInputI2S2_F32**  
 **AudioOutputI2S2_F32**  
 Input and output for the I2S2 interface, Teensy 4.1 only.  
+
+**AudioInputI2S_ext_F32**  
+**AudioOutputI2S_ext_F32**  
+Custom input and output for the I2S interface, including a few extra options (ie. channel swap)  
+
 
 ## Basic  
 Single header basic building blocks for various DSP components:  
@@ -60,8 +74,9 @@ Single header basic building blocks for various DSP components:
 
 ## Example projects  
 https://github.com/hexeguitar/hexefx_audiolib_F32_examples
+https://github.com/hexeguitar/tgx4
 
 ---  
-Copyright 01.2024 by Piotr Zapart  
+Copyright 07.2024 by Piotr Zapart  
 www.hexefx.com
 

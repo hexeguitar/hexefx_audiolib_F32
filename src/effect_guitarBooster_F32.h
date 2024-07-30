@@ -1,6 +1,3 @@
-#ifndef _EFFECT_GUITARBOOSTER_F32_H_
-#define _EFFECT_GUITARBOOSTER_F32_H_
-
 /**
  * @file effect_guitarBooster_F32.h
  * @author Piotr Zapart
@@ -20,6 +17,8 @@
  * You should have received a copy of the GNU General Public License along with this program. 
  * If not, see <https://www.gnu.org/licenses/>."
  */
+#ifndef _EFFECT_GUITARBOOSTER_F32_H_
+#define _EFFECT_GUITARBOOSTER_F32_H_
 
 #include <AudioStream_F32.h>
 #include "basic_DSPutils.h"
@@ -78,7 +77,8 @@ public:
 	{
 		value = fabs(value);
 		value = constrain(value, 0.0f, 1.0f);
-		value = 1.0f + value * upsample_k * gainRange;
+		// start with 0.5 - L+R are summed giving x2 gain
+		value = 0.5f + value * upsample_k * gainRange;
 		__disable_irq()
 		gainSet = value;
 		__enable_irq();
@@ -168,7 +168,7 @@ private:
 	float32_t dryGain = 0.0f;
 	float32_t wetGain = 1.0f;
 	float32_t  DCbias = 0.175f;
-	float32_t gainRange = 4.0f;
+	float32_t gainRange = 4.5f;
     float32_t gainSet = 1.0f; // gain is in range 0.0 to 1.0, scaled to 0.0 to gainRange
     float32_t gain = 0.0f;
 	float32_t gain_hp = 1.0f;

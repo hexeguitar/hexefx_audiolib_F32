@@ -4,6 +4,8 @@
 #include "control_WM8731_F32.h"
 #include "control_SGTL5000_F32.h"
 #include "control_ES8388_F32.h"
+#include "control_AK4452_F32.h"
+#include "control_AK5552_F32.h"
 
 #include "input_i2s_ext_F32.h"
 #include "output_i2s_ext_F32.h" // extended version
@@ -17,6 +19,7 @@
 #include "filter_equalizer_F32.h"
 #include "filter_3bandeq.h"
 #include "filter_biquadStereo_F32.h"
+#include "filter_DCblockerStereo_F32.h"
 
 #include "effect_gainStereo_F32.h"
 #include "effect_platereverb_F32.h"
@@ -30,5 +33,6 @@
 #include "effect_compressorStereo_F32.h"
 #include "effect_guitarBooster_F32.h"
 #include "effect_xfaderStereo_F32.h"
+#include "effect_wahMono_F32.h"
 
 #endif // _HEXEFX_AUDIO_H

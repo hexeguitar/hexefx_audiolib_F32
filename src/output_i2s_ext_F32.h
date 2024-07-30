@@ -60,6 +60,8 @@ public:
     void setGain(float _oscale) {outputScale = _oscale; }
 	virtual void update(void);
 	void begin(void);
+	void set_channel_swap(bool sw) { channel_swap = sw ? 1 : 0;}
+	bool get_channel_swap() {return (bool)channel_swap;}
 	friend class AudioInputI2S_ext_F32;
 	#if defined(__IMXRT1062__)
 		friend class AudioOutputI2SQuad_F32;
@@ -84,6 +86,7 @@ private:
 	static int audio_block_samples;
 	volatile uint8_t enabled = 1;
     float outputScale = 1.0f;  // Quick volume control
+	uint8_t channel_swap = 0;
 };
 
 class AudioOutputI2Sslave_ext_F32 : public AudioOutputI2S_ext_F32

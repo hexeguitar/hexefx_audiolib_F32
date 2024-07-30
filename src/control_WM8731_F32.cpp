@@ -236,13 +236,12 @@ bool AudioControlWM8731_F32::enable(bit_depth_t bits, TwoWire *i2cBus, uint8_t a
 void AudioControlWM8731_F32::dac_mute(bool m)
 {
 	modify(WM8731_REG_DIGITAL, m ? WM8731_BITS_DACMU(1) : WM8731_BITS_DACMU(0), WM8731_BITS_DACMU_MASK);
-	//write(WM8731_REG_DIGITAL, ); // DAC soft mute
 	DACmute = m;
 }
 // ----------------------------------------------------------------------------------
 void AudioControlWM8731_F32::hp_filter(bool state)
 {
-	modify(WM8731_REG_DIGITAL, WM8731_BITS_ADCHPD(state), WM8731_BITS_ADCHPD_MASK);
+	modify(WM8731_REG_DIGITAL, WM8731_BITS_ADCHPD(state^1), WM8731_BITS_ADCHPD_MASK);
 	//write(WM8731_REG_DIGITAL, WM8731_BITS_DACMU(DACmute) | WM8731_BITS_ADCHPD(state));
 }
 // ----------------------------------------------------------------------------------

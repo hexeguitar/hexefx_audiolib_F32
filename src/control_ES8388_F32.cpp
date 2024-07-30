@@ -1,7 +1,5 @@
 #include "control_ES8388_F32.h"
 
-
-
 #define ES8388_REG_CHIP_CTRL1		(0x00)	// Default 0000 0110
 #define ES8388_REG_CHIP_CTRL1_DFLT	(0x06)
 	#define ES8388_BIT_SCPRESET		(1<<7) 	// 1=reset registers to default
@@ -475,19 +473,6 @@ bool AudioControlES8388_F32::enable(TwoWire *i2cBus, uint8_t addr, config_t cfg)
 	// optimize A/D conversion for 1/4 Vrms range
 	optimizeConversion(0);
 	writeReg(ES8388_REG_CHIP_PWR_MAN, 0x00); // Power up DEM and STM
-	
-	// ALC config  - disabled for now, will be tested someday.. 
-	// writeReg(ES8388_REG_ADC_CTRL10, ES8388_ALCSEL(ES8388_ALCSEL_LR) |			// ALC OFF
-	// 									ES8388_MAXGAIN(ES8388_MAXGAIN_M0_5DB) | // max gain -0.5dB
-	// 									ES8388_MINGAIN(ES8388_MINGAIN_M12DB));	// min gain -12dB
-	// writeReg(ES8388_REG_ADC_CTRL11, ES8388_ALCLVL(0x0A));						// target gain -1.5dB, hold time=0
-	// writeReg(ES8388_REG_ADC_CTRL12, ES8388_ALCATK(0x02) |						// ALC limiter attack time 90.8us
-	// 									ES8388_ALCDCY(0x01));					// ALC limiter decay time 182us
-	// writeReg(ES8388_REG_ADC_CTRL13, ES8388_BIT_ALCMODE | ES8388_WINSIZE(0x06));	// Limiter mode, no ZC, 96*16 samples peak window
-	// writeReg(ES8388_REG_ADC_CTRL14, 0x00);										// disable noise gate
-	//writeReg(ES8388_REG_ADC_CTRL14, ES8388_NGTH(0x1F) | ES8388_NGG(ES8388_NGG_ADCMUTE)| ES8388_BIT_NGAT_EN);
-	// ADC PGA gain
-	//writeReg(ES8388_REG_ADC_CTRL1, 0x00);		
 
 	configured = true;
 	return true;
@@ -555,7 +540,7 @@ void AudioControlES8388_F32::set_noiseGate(float thres)
 	writeReg(ES8388_REG_ADC_CTRL14, ES8388_NGTH(thres_val) | ES8388_NGG(ES8388_NGG_ADCMUTE)| ES8388_BIT_NGAT_EN);	
 }
 
-// bypassed the analog input to the output, disconnect the digital i / o 
+
 bool AudioControlES8388_F32::analogBypass(bool bypass)
 {
 	bool res = true;
@@ -572,16 +557,15 @@ bool AudioControlES8388_F32::analogBypass(bool bypass)
 	return res;
 }
 
-// bypassed the analog input to the output, disconnect the digital input, preserve the digital output connection
 bool AudioControlES8388_F32::analogSoftBypass(bool bypass)
 {
 	bool res = true;
 	if (bypass)
 	{
-		res &= writeReg(ES8388_REG_DAC_CTRL17, 	ES8388_BIT_LI2LO | 					// Lin in on
+		res &= writeReg(ES8388_REG_DAC_CTRL17, 	ES8388_BIT_LI2LO | 					// Lin on
 												ES8388_BIT_LD2LO |					// L Dac on
 												ES8388_LI2LOVOL(ES8388_VOL_0DB)); 	// Lin gain 0dB
-		res &= writeReg(ES8388_REG_DAC_CTRL20,  ES8388_BIT_RI2RO | 					// Rin in on
+		res &= writeReg(ES8388_REG_DAC_CTRL20,  ES8388_BIT_RI2RO | 					// Rin on
 												ES8388_BIT_RD2RO |					// R Dac on
 												ES8388_RI2ROVOL(ES8388_VOL_0DB)); 	// Rin gain 0dB
 	}

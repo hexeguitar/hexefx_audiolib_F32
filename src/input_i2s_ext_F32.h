@@ -58,7 +58,8 @@ public:
 	void begin(void);
 	int get_isOutOfMemory(void) { return flag_out_of_memory; }
 	void clear_isOutOfMemory(void) { flag_out_of_memory = 0; }
-
+	void set_channel_swap(bool sw) { channel_swap = sw ? 1 : 0;}
+	bool get_channel_swap() {return (bool)channel_swap;}
 protected:
 	AudioInputI2S_ext_F32(int dummy) : AudioStream_F32(0, NULL) {} // to be used only inside AudioInputI2Sslave !!
 	static bool update_responsibility;
@@ -74,7 +75,7 @@ private:
 	static uint16_t block_offset;
 	static int flag_out_of_memory;
 	static unsigned long update_counter;
-	static bool msbFirstMode; // some codecs like the new AKM series (AK4558) use MSB exclusively
+	uint8_t channel_swap = 0;
 };
 
 class AudioInputI2Sslave_ext_F32 : public AudioInputI2S_ext_F32

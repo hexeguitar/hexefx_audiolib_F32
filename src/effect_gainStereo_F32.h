@@ -76,12 +76,9 @@ public:
 
 	void setPan(float32_t p)
 	{
-		float32_t tmp, gL, gR;
-		pan = constrain(p, -1.0f, 1.0f);
-		tmp = (pan + 1.0f) * 0.5f; // map to 0..1
-		
-		mix_pwr(tmp, &panR, &panL);
-
+		float32_t gL, gR;
+		pan = constrain(p, 0.0f, 1.0f);
+		mix_pwr(pan, &panR, &panL);
 
 		gL = panL * gain;
 		gR = panR * gain;	
@@ -89,7 +86,6 @@ public:
 		gainLset = gL;
 		gainRset = gR;
 		__enable_irq();
-
 	}
 	float32_t getPan() { return pan;}
 	void phase_inv(bool inv)

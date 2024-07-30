@@ -178,8 +178,8 @@ void AudioInputI2S2_F32::update(void)
 		block_right_f32 = new_right;
 		block_offset = 0;
 		__enable_irq();
-		update_1chan(0, out_left);	// uses audio_block_samples and update_counter
-		update_1chan(1, out_right); // uses audio_block_samples and update_counter
+		update_1chan(0^channel_swap, out_left);	// uses audio_block_samples and update_counter
+		update_1chan(1^channel_swap, out_right); // uses audio_block_samples and update_counter
 	}
 	else if (new_left != NULL)
 	{

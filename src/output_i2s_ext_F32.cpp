@@ -203,7 +203,7 @@ void AudioOutputI2S_ext_F32::update(void)
 		return;
 	}
 	// now that we have our working memory, proceed with getting the audio data and processing
-	block_f32 = receiveReadOnly_f32(0); // input 0 = left channel
+	block_f32 = receiveReadOnly_f32(0^channel_swap); // input 0 = left channel
 	if (block_f32)
 	{
 		if (block_f32->length != audio_block_samples)
@@ -251,7 +251,7 @@ void AudioOutputI2S_ext_F32::update(void)
 
 	block_f32_scaled = block2_f32_scaled; // this is simply renaming the pre-allocated buffer
 
-	block_f32 = receiveReadOnly_f32(1); // input 1 = right channel
+	block_f32 = receiveReadOnly_f32(1^channel_swap); // input 1 = right channel
 	if (block_f32)
 	{
 		// Optional scaling for easy volume control.  Leave outputScale==1.0f for default
