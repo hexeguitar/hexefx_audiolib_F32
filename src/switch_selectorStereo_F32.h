@@ -50,14 +50,10 @@ public:
 		blockL = AudioStream_F32::receiveWritable_f32(0);
 		blockR = AudioStream_F32::receiveWritable_f32(1);
 
-
 		if (!blockL || !blockR)
 		{
 			if (blockL) AudioStream_F32::release(blockL);
 			if (blockR) AudioStream_F32::release(blockR);
-
-
-
 			return;
 		}
 		switch(mode)

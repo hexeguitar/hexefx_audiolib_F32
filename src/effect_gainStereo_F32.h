@@ -78,7 +78,7 @@ public:
 	{
 		float32_t gL, gR;
 		pan = constrain(p, 0.0f, 1.0f);
-		mix_pwr(pan, &panR, &panL);
+		mix_pwr(pan, &panL, &panR);
 
 		gL = panL * gain;
 		gR = panR * gain;	

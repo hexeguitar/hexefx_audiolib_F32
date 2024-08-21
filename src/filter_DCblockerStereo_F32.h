@@ -130,8 +130,8 @@ public:
 		xRegR = _xRegR;
 		yRegR = _yRegR;
 
-		AudioStream_F32::transmit(blockL, 0); // send blockL on both output channels
-		AudioStream_F32::transmit(blockL, 1);
+		AudioStream_F32::transmit(blockL, 0);
+		AudioStream_F32::transmit(blockR, 1);
 		AudioStream_F32::release(blockL);
 		AudioStream_F32::release(blockR);
 
