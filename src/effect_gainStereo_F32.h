@@ -27,8 +27,8 @@
 class AudioEffectGainStereo_F32 : public AudioStream_F32
 {
 public:
-	AudioEffectGainStereo_F32(void) : AudioStream_F32(2, inputQueueArray_f32) { setPan(0.0f);};
-	AudioEffectGainStereo_F32(const AudioSettings_F32 &settings) : AudioStream_F32(2, inputQueueArray_f32){setPan(0.0f);};
+	AudioEffectGainStereo_F32(void) : AudioStream_F32(2, inputQueueArray_f32) { setPan(0.5f);};
+	AudioEffectGainStereo_F32(const AudioSettings_F32 &settings) : AudioStream_F32(2, inputQueueArray_f32){setPan(0.5f);};
 	void update(void)
 	{
 		audio_block_f32_t *blockL, *blockR;
