@@ -44,7 +44,12 @@
 class AudioEffectPlateReverb_F32 : public AudioStream_F32
 {
 public:
-    AudioEffectPlateReverb_F32();
+    AudioEffectPlateReverb_F32() : AudioStream_F32(2, inputQueueArray_f32) { begin();}
+	AudioEffectPlateReverb_F32(const AudioSettings_F32 &settings) : AudioStream_F32(2, inputQueueArray_f32)
+	{
+		block_size = settings.audio_block_samples;
+		begin();			
+	}
 	~AudioEffectPlateReverb_F32(){};
     virtual void update();
 
@@ -510,6 +515,8 @@ private:
     const float freeze_hidamp_k = 1.0f;
 
 	bool initialised = false;
+	uint16_t block_size = AUDIO_BLOCK_SAMPLES;
+
 };
 
 #endif // _EFFECT_PLATERVBSTEREO_20COPY_H_
