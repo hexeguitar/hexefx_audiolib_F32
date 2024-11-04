@@ -72,6 +72,11 @@ public:
         inputGainSet = 0.5f;
 		__enable_irq();
     }
+
+	void time(float n)
+	{
+		size(n);
+	}
 	/**
 	 * @brief returns the set reverb time
 	 * 
@@ -256,12 +261,6 @@ public:
      */
     bool freeze_get() {return flags.freeze;}
  	
-	typedef enum
-	{
-		BYPASS_MODE_PASS,		// pass the input signal to the output
-		BYPASS_MODE_OFF,		// mute the output
-		BYPASS_MODE_TRAILS		// mutes the input only
-	}bypass_mode_t;
 	/**
 	 * @brief sets the bypass mode (see above)
 	 * 

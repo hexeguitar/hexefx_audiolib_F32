@@ -84,6 +84,11 @@ void AudioEffectDelayStereo_F32::update()
 	uint32_t mod_int;
 	static float32_t dly_time_flt = 0.0f;
 
+	blockL = AudioStream_F32::receiveWritable_f32(0);
+	blockR = AudioStream_F32::receiveWritable_f32(1);
+	if (!bypass_process(&blockL, &blockR, bp_mode, bp))
+		return;
+
     if (bp)
     {
 		// mem cleanup not required in TRAILS mode
@@ -94,51 +99,22 @@ void AudioEffectDelayStereo_F32::update()
 			tap_counter = 0;
 		}
 		if (infinite) freeze(false);
-		switch(bp_mode)
+		if (bp_mode != BYPASS_MODE_TRAILS)
 		{
-			case BYPASS_MODE_PASS:
-				blockL = AudioStream_F32::receiveReadOnly_f32(0);
-				blockR = AudioStream_F32::receiveReadOnly_f32(1);
-				if (!blockL || !blockR) 
-				{
-					if (blockL) AudioStream_F32::release(blockL);
-					if (blockR) AudioStream_F32::release(blockR);
-					return;
-				}
-				AudioStream_F32::transmit(blockL, 0);	
-				AudioStream_F32::transmit(blockR, 1);
-				AudioStream_F32::release(blockL);
-				AudioStream_F32::release(blockR);
-				return;
-				break;
-			case BYPASS_MODE_OFF:
-				blockL = AudioStream_F32::allocate_f32();
-				if (!blockL) return;
-				memset(&blockL->data[0], 0, blockL->length*sizeof(float32_t));
-				AudioStream_F32::transmit(blockL, 0);	
-				AudioStream_F32::transmit(blockL, 1);
-				AudioStream_F32::release(blockL);	
-				return;
-				break;
-			case BYPASS_MODE_TRAILS:
-				inputGainSet = 0.0f;
-				tap_active = false;	// reset tap tempo
-				tap_counter = 0;
-				break;
-			default:
-				break;
+			AudioStream_F32::transmit(blockL, 0);
+			AudioStream_F32::transmit(blockR, 1);
+			AudioStream_F32::release(blockL);
+			AudioStream_F32::release(blockR);
+			return;
+		}
+		else
+		{
+			inputGainSet = 0.0f;
+			tap_active = false;	// reset tap tempo
+			tap_counter = 0;		
 		}
 	}
-	blockL = AudioStream_F32::receiveWritable_f32(0);
-	blockR = AudioStream_F32::receiveWritable_f32(1);
-	if (!blockL || !blockR)
-	{
-		if (blockL)
-			AudioStream_F32::release(blockL);
-		if (blockR)
-			AudioStream_F32::release(blockR);
-		return;
-	}
+
 	cleanup_done = false;
 
 	for (i=0; i < blockL->length; i++) 

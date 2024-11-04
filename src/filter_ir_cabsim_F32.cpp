@@ -21,7 +21,6 @@
  * If not, see <https://www.gnu.org/licenses/>."
  */
 #include "filter_ir_cabsim_F32.h"
-#include "HxFx_memcpy.h"
 
 AudioFilterIRCabsim_F32::AudioFilterIRCabsim_F32() : AudioStream_F32(2, inputQueueArray_f32)
 {
@@ -56,30 +55,6 @@ void AudioFilterIRCabsim_F32::update()
 		if (blockR) AudioStream_F32::release(blockR);
 		return;
 	}
-#ifdef USE_IR_ISR_LOAD
-	switch(ir_loadState)
-	{
-		case IR_LOAD_START:
-			ptr_fmask = &fmask[0][0];
-			ptr_fftout = &fftout[0];
-			memset(ptr_fftout, 0, nfor*512*4);  // clear fftout array
-			memset(fftin, 0,  512 * 4);  // clear fftin array
-			ir_loadState = IR_LOAD_STEP1;	
-			break;
-		case IR_LOAD_STEP1:
-			init_partitioned_filter_masks(irPtrTable[ir_idx]);
-			ir_loadState = IR_LOAD_STEP2;
-			break;
-		case IR_LOAD_STEP2:
-			delay.reset();
-			ir_loaded = 1;
-			ir_loadState = IR_LOAD_FINISHED;
-			break;
-		case IR_LOAD_FINISHED:
-		default: break;
-	}
-
-#endif
 	if (!ir_loaded) // ir not loaded yet or bypass mode
 	{
 		// bypass clean signal
@@ -197,16 +172,6 @@ void AudioFilterIRCabsim_F32::ir_load(uint8_t idx)
 	{
 		return;
 	}
-#ifdef USE_IR_ISR_LOAD
-	nc = newIrPtr[0];
-	uint32_t _nfor = nc / IR_BUFFER_SIZE;
-	if (_nfor > nforMax) _nfor = nforMax;
-	__disable_irq()
-	nfor = _nfor;
-	ir_loadState = IR_LOAD_START;
-	__enable_irq();
-	ir_length_ms =  (1000.0f * nfor * (float32_t)AUDIO_BLOCK_SAMPLES) / AUDIO_SAMPLE_RATE_EXACT;
-#else
 	
 	AudioNoInterrupts();
 	nc = newIrPtr[0];
@@ -222,11 +187,8 @@ void AudioFilterIRCabsim_F32::ir_load(uint8_t idx)
 
 	delay.reset();
 	ir_loaded = 1;
-	ir_loadState = IR_LOAD_FINISHED;
 	
 	AudioInterrupts();
-	#endif
-
 }
 
 

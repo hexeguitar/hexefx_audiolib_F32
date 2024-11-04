@@ -22,6 +22,7 @@
 #include "AudioStream_F32.h"
 #include "arm_math.h"
 #include "basic_DSPutils.h"
+#include "basic_bypassStereo_F32.h"
 
 #define REVERBSC_DLYBUF_SIZE 98936
 
@@ -103,12 +104,6 @@ public:
 	void freeze(bool state);
     bool freeze_tgl() {freeze(flags.freeze^1); return flags.freeze;}
     bool freeze_get() {return flags.freeze;}
- 	typedef enum
-	{
-		BYPASS_MODE_PASS,		// pass the input signal to the output
-		BYPASS_MODE_OFF,		// mute the output
-		BYPASS_MODE_TRAILS		// mutes the input only
-	}bypass_mode_t;
 	void bypass_setMode(bypass_mode_t m)
 	{
 		if (m <= BYPASS_MODE_TRAILS) 
@@ -149,11 +144,12 @@ private:
 		unsigned cleanup_done:		1;
 		unsigned memsetup_done:		1;
 		unsigned mem_fail:			1;
-    }flags = {0, 0, 0};
+    }flags;
 	bypass_mode_t bp_mode;
 	audio_block_f32_t *inputQueueArray_f32[2];
     void NextRandomLineseg(ReverbScDl_t *lp, int n);
     void InitDelayLine(ReverbScDl_t *lp, int n);
+	//void bypass_process();
     float32_t feedback_, feedback_tmp;
 	float32_t lpfreq_;
 	float32_t i_pitch_mod_;

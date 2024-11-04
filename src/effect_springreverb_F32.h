@@ -121,12 +121,12 @@ public:
     }
     float32_t get_size(void) {return rv_time_k;}
 
-	typedef enum
-	{
-		BYPASS_MODE_PASS,		// pass the input signal to the output
-		BYPASS_MODE_OFF,		// mute the output
-		BYPASS_MODE_TRAILS		// mutes the input only
-	}bypass_mode_t;
+	// typedef enum
+	// {
+	// 	BYPASS_MODE_PASS,		// pass the input signal to the output
+	// 	BYPASS_MODE_OFF,		// mute the output
+	// 	BYPASS_MODE_TRAILS		// mutes the input only
+	// }bypass_mode_t;
 	void bypass_setMode(bypass_mode_t m)
 	{
 		if (m <= BYPASS_MODE_TRAILS) bp_mode = m;

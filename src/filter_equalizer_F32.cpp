@@ -175,7 +175,7 @@ AudioFilterEqualizer_HX_F32::eq_result_t AudioFilterEqualizer_HX_F32::equalizerN
 	}
 	// And fill in the members of fir_inst
 	arm_fir_init_f32(&fir_inst, nFIR, (float32_t *)cf32f, &StateF32[0], (uint32_t)block_size);
-	return EQ_ERSULT_OK;
+	return EQ_RESULT_OK;
 }
 
 /* Calculate response in dB.  Leave nFreq point result in array rdb[] supplied

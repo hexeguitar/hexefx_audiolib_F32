@@ -8,5 +8,6 @@
 #include "basic_pitch.h"
 #include "basic_DSPutils.h"
 #include "basic_tempBuffer.h"
+#include "basic_bypassStereo_F32.h"
 
 #endif // _BASIC_COMPONENTS_H_

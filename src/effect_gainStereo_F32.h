@@ -96,7 +96,7 @@ public:
 	}
 
 private:
-	audio_block_f32_t *inputQueueArray_f32[2]; // memory pointer for the input to this module
+	audio_block_f32_t *inputQueueArray_f32[2];
 	float32_t gain = 1.0f;						   // default value
 	float32_t gainL, gainR, gainLset, gainRset;
 	float32_t pan, panL, panR;

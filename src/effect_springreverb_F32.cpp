@@ -92,6 +92,12 @@ void AudioEffectSpringReverb_F32::update()
 	uint32_t offset;
 	float lfo_fr;	
     if (!initialized) return;
+
+	blockL = AudioStream_F32::receiveWritable_f32(0);
+	blockR = AudioStream_F32::receiveWritable_f32(1);
+	if (!bypass_process(&blockL, &blockR, bp_mode, bp))
+		return;
+
     if (bp)
     {
 		if (!cleanup_done && bp_mode != BYPASS_MODE_TRAILS)
@@ -112,49 +118,17 @@ void AudioEffectSpringReverb_F32::update()
 			memset(&sp_chrp_alp4_buf[0], 0, SPRVB_CHIRP_AMNT*SPRVB_CHIRP4_LEN*sizeof(float));			
 			cleanup_done = true;
 		}
-
-		switch(bp_mode)
+		if (bp_mode != BYPASS_MODE_TRAILS)
 		{
-			case BYPASS_MODE_PASS:
-				blockL = AudioStream_F32::receiveReadOnly_f32(0);
-				blockR = AudioStream_F32::receiveReadOnly_f32(1);
-				if (!blockL || !blockR) 
-				{
-					if (blockL) AudioStream_F32::release(blockL);
-					if (blockR) AudioStream_F32::release(blockR);
-					return;
-				}
-				AudioStream_F32::transmit(blockL, 0);	
-				AudioStream_F32::transmit(blockR, 1);
-				AudioStream_F32::release(blockL);
-				AudioStream_F32::release(blockR);
-				return;
-				break;
-			case BYPASS_MODE_OFF:
-				blockL = AudioStream_F32::allocate_f32();
-				if (!blockL) return;
-				memset(&blockL->data[0], 0, blockL->length*sizeof(float32_t));
-				AudioStream_F32::transmit(blockL, 0);	
-				AudioStream_F32::transmit(blockL, 1);
-				AudioStream_F32::release(blockL);	
-				return;
-				break;
-			case BYPASS_MODE_TRAILS:
-			default:
-				break;
+			AudioStream_F32::transmit(blockL, 0);
+			AudioStream_F32::transmit(blockR, 1);
+			AudioStream_F32::release(blockL);
+			AudioStream_F32::release(blockR);
+			return;
 		}
     }
+	
 	cleanup_done = false;
-	blockL = AudioStream_F32::receiveWritable_f32(0);
-	blockR = AudioStream_F32::receiveWritable_f32(1);
-	if (!blockL || !blockR)
-	{
-		if (blockL)
-			AudioStream_F32::release(blockL);
-		if (blockR)
-			AudioStream_F32::release(blockR);
-		return;
-	}
     rv_time = rv_time_k;
 	for (i=0; i < blockL->length; i++) 
     {  

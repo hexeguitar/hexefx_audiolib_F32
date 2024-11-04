@@ -151,7 +151,7 @@ public:
 	bool bypass_tgl() {bp ^=1; return bp;}
 	typedef enum
 	{
-		EQ_ERSULT_OK = 0,
+		EQ_RESULT_OK = 0,
 		EQ_RESULT_ERR_BANDS,
 		EQ_RESULT_ERR_SIDELOBES,
 		EQ_RESULT_ERR_NFIR

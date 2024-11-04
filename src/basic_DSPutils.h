@@ -4,8 +4,11 @@
 #include <Arduino.h>
 #include <arm_math.h>
 
-#define F32_TO_I32_NORM_FACTOR (2147483647) // which is 2^31-1
-#define I32_TO_F32_NORM_FACTOR (4.656612875245797e-10)   //which is 1/(2^31 - 1)
+#define F32_TO_I32_NORM_FACTOR 	(2147483647) // which is 2^31-1
+#define I32_TO_F32_NORM_FACTOR 	(4.656612875245797e-10)   //which is 1/(2^31 - 1)
+#define I24_TO_F32_NORM_FACTOR	(1.1920930376163766e-07)	// 1/(2^23 - 1)
+#define I16_TO_F32_NORM_FACTOR	(3.051850947599719e-05)
+
 
 static inline void mix_pwr(float32_t mix, float32_t *wetMix, float32_t *dryMix);
 static inline void mix_pwr(float32_t mix, float32_t *wetMix, float32_t *dryMix)

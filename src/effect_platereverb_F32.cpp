@@ -121,17 +121,23 @@ void AudioEffectPlateReverb_F32::update()
 {
 #if defined(__IMXRT1062__)	
 	if (!initialised) return;
-    audio_block_f32_t *blockL, *blockR, *blockSilent;
+    audio_block_f32_t *blockL, *blockR;
 	int16_t i;
 	float acc;
     float rv_time;
 	uint32_t offset;
 	float lfo_fr;
+
+	blockL = AudioStream_F32::receiveWritable_f32(0);
+	blockR = AudioStream_F32::receiveWritable_f32(1);
+	if (!bypass_process(&blockL, &blockR, bp_mode, (bool)flags.bypass))
+		return;
+
     // handle bypass, 1st call will clean the buffers to avoid continuing the previous reverb tail
     if (flags.bypass)
     {
-        if (!flags.cleanup_done && bp_mode != BYPASS_MODE_TRAILS)
-        {
+		if (!flags.cleanup_done && bp_mode != BYPASS_MODE_TRAILS)
+		{
 			in_allp_1L.reset();
 			in_allp_2L.reset();
 			in_allp_3L.reset();
@@ -148,91 +154,18 @@ void AudioEffectPlateReverb_F32::update()
 			lp_dly2.reset();
 			lp_dly3.reset();
 			lp_dly4.reset();
-            flags.cleanup_done = 1;
-        }
-		switch(bp_mode)
-		{
-			case BYPASS_MODE_PASS:
-				blockL = AudioStream_F32::receiveReadOnly_f32(0);
-				blockR = AudioStream_F32::receiveReadOnly_f32(1);
-				if (!blockL || !blockR) 
-				{
-					// preapare silent block
-					blockSilent = AudioStream_F32::allocate_f32();
-					if (!blockSilent)	// no memory, 
-					{
-						if (blockL)	AudioStream_F32::release(blockL);
-						if (blockR) AudioStream_F32::release(blockR);
-						return;
-					}
-					memset(&blockSilent->data[0], 0, blockSilent->length*sizeof(float32_t));
-
-					if (blockL)
-					{
-						AudioStream_F32::transmit(blockL, 0);
-						AudioStream_F32::release(blockL);
-					}
-					else 
-					{
-						AudioStream_F32::transmit(blockSilent, 0);
-					}
-					if (blockR) 
-					{
-						AudioStream_F32::transmit(blockR, 1);
-						AudioStream_F32::release(blockR);
-					}
-					else
-					{
-						AudioStream_F32::transmit(blockSilent, 1);
-					}
-					AudioStream_F32::release(blockSilent);
-					return;
-				}
-				AudioStream_F32::transmit(blockL, 0);	
-				AudioStream_F32::transmit(blockR, 1);
-				AudioStream_F32::release(blockL);
-				AudioStream_F32::release(blockR);
-				return;
-				break;
-			case BYPASS_MODE_OFF:
-				blockSilent = AudioStream_F32::allocate_f32();
-				if (!blockSilent) return;
-				memset(&blockSilent->data[0], 0, blockSilent->length*sizeof(float32_t));
-				AudioStream_F32::transmit(blockSilent, 0);	
-				AudioStream_F32::transmit(blockSilent, 1);
-				AudioStream_F32::release(blockSilent);	
-				return;
-				break;
-			case BYPASS_MODE_TRAILS:
-			default:
-				break;
+			flags.cleanup_done = 1;
 		}
-    }
-    blockL = AudioStream_F32::receiveWritable_f32(0);
-    blockR = AudioStream_F32::receiveWritable_f32(1);
-
-	if (!blockL || !blockR) 
-    {
-		// preapare silent block
-		blockSilent = AudioStream_F32::allocate_f32();
-		if (!blockSilent)	// no memory, 
+		if (bp_mode != BYPASS_MODE_TRAILS)
 		{
-			if (blockL)	AudioStream_F32::release(blockL);
-			if (blockR) AudioStream_F32::release(blockR);
+			AudioStream_F32::transmit(blockL, 0);
+			AudioStream_F32::transmit(blockR, 1);
+			AudioStream_F32::release(blockL);
+			AudioStream_F32::release(blockR);
 			return;
 		}
-		memset(&blockSilent->data[0], 0, blockSilent->length*sizeof(float32_t));
-		if (!blockL) 
-		{
-			blockL = blockSilent;
-		}
-
-		if (!blockR) 
-		{
-			blockR = blockSilent;
-		}
 	}
-
+	
 	flags.cleanup_done = 0;
     rv_time = rv_time_k;
 
