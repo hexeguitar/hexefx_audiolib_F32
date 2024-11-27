@@ -45,8 +45,8 @@ public:
 	bool enable(bit_depth_t bits, TwoWire *i2cBus, uint8_t addr);
 	bool disable(void) { return false; }
 	bool volume(float n) { return hp_volumeInteger(n * 80.0f + 47.499f); }
-	bool inputLevel(float n); // range: 0.0f to 1.0f
-	bool inputLevelraw(uint8_t n); // direc value 0-31
+	bool inputLevel(float n); 												// range: 0.0f to 1.0f
+	bool inputLevelRaw(uint8_t n); 											// direct value 0-31
 	bool inputSelect(int n=AUDIO_INPUT_LINEIN);
 
 	void lineIn_mute(bool m);
@@ -61,7 +61,6 @@ public:
 
 protected:
 	bool write(uint16_t regAddr, uint16_t val);
-	uint16_t read(uint16_t reg);
 	uint16_t modify(uint16_t reg, uint16_t val, uint16_t iMask);
 	bool hp_volumeInteger(uint16_t n); // range: 0x2F to 0x7F
 private:
@@ -84,4 +83,4 @@ private:
 	TwoWire *_wire;
 	bool dry_sig = false;
 };
-#endif // _CONTROL_WM8731_EXTENDED_H_
+#endif // _CONTROL_WM8731_F32_H_

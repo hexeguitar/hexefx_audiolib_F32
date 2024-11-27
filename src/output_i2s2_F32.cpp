@@ -57,18 +57,18 @@ int AudioOutputI2S2_F32::audio_block_samples = AUDIO_BLOCK_SAMPLES;
 
 #define I2S2_BUFFER_TO_USE_BYTES (AudioOutputI2S2_F32::audio_block_samples * sizeof(i2s2_tx_buffer[0]))
 //  --------------------------------------------------------------------------------
-void AudioOutputI2S2_F32::begin(void)
-{
-	bool transferUsing32bit = true;
-	begin(transferUsing32bit);
-}
+// void AudioOutputI2S2_F32::begin(void)
+// {
+// 	bool transferUsing32bit = true;
+// 	begin(transferUsing32bit);
+// }
 //  --------------------------------------------------------------------------------
-void AudioOutputI2S2_F32::begin(bool transferUsing32bit)
+void AudioOutputI2S2_F32::begin(bool mclk_enable)
 {
 	dma.begin(true); // Allocate the DMA channel first
 	block_left_1st = NULL;
 	block_right_1st = NULL;
-	AudioOutputI2S2_F32::config_i2s(transferUsing32bit, sample_rate_Hz);
+	AudioOutputI2S2_F32::config_i2s(mclk_enable, sample_rate_Hz);
 
 #if defined(__IMXRT1062__)
 	CORE_PIN2_CONFIG = 2; // EMC_04, 2=SAI2_TX_DATA, page 428
@@ -281,11 +281,11 @@ void AudioOutputI2S2_F32::update(void)
 		AudioStream_F32::release(block_f32_scaled);
 	}
 }
-void AudioOutputI2S2_F32::config_i2s(void) { config_i2s(false, AudioOutputI2S2_F32::sample_rate_Hz); }
-void AudioOutputI2S2_F32::config_i2s(bool transferUsing32bit) { config_i2s(transferUsing32bit, AudioOutputI2S2_F32::sample_rate_Hz); }
-void AudioOutputI2S2_F32::config_i2s(float fs_Hz) { config_i2s(false, fs_Hz); }
+void AudioOutputI2S2_F32::config_i2s(void) { config_i2s(true, AudioOutputI2S2_F32::sample_rate_Hz); }
+void AudioOutputI2S2_F32::config_i2s(bool mclk_enable) { config_i2s(mclk_enable, AudioOutputI2S2_F32::sample_rate_Hz); }
+void AudioOutputI2S2_F32::config_i2s(float fs_Hz) { config_i2s(true, fs_Hz); }
 
-void AudioOutputI2S2_F32::config_i2s(bool transferUsing32bit, float fs_Hz)
+void AudioOutputI2S2_F32::config_i2s(bool mclk_enable, float fs_Hz)
 {
 #if defined(__IMXRT1062__)
 	CCM_CCGR5 |= CCM_CCGR5_SAI2(CCM_CCGR_ON);
@@ -311,7 +311,7 @@ void AudioOutputI2S2_F32::config_i2s(bool transferUsing32bit, float fs_Hz)
 	CCM_CS2CDR = (CCM_CS2CDR & ~(CCM_CS2CDR_SAI2_CLK_PRED_MASK | CCM_CS2CDR_SAI2_CLK_PODF_MASK)) | CCM_CS2CDR_SAI2_CLK_PRED(n1 - 1) | CCM_CS2CDR_SAI2_CLK_PODF(n2 - 1);
 	IOMUXC_GPR_GPR1 = (IOMUXC_GPR_GPR1 & ~(IOMUXC_GPR_GPR1_SAI2_MCLK3_SEL_MASK)) | (IOMUXC_GPR_GPR1_SAI2_MCLK_DIR | IOMUXC_GPR_GPR1_SAI2_MCLK3_SEL(0)); // Select MCLK
 
-	CORE_PIN33_CONFIG = 2; // EMC_07, 2=SAI2_MCLK
+	if (mclk_enable) CORE_PIN33_CONFIG = 2; // EMC_07, 2=SAI2_MCLK
 	CORE_PIN4_CONFIG = 2;  // EMC_06, 2=SAI2_TX_BCLK
 	CORE_PIN3_CONFIG = 2;  // EMC_05, 2=SAI2_TX_SYNC, page 429
 

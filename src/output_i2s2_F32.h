@@ -42,22 +42,24 @@
 #include "AudioStream_F32.h"
 #include "DMAChannel.h"
 
+// TODO: Add optional MCLK disable
+
 class AudioOutputI2S2_F32 : public AudioStream_F32
 {
 //GUI: inputs:2, outputs:0  //this line used for automatic generation of GUI node
 public:
     //uses default AUDIO_SAMPLE_RATE and BLOCK_SIZE_SAMPLES from AudioStream.h:
-	AudioOutputI2S2_F32(void) : AudioStream_F32(2, inputQueueArray)	{ begin();} 
+	AudioOutputI2S2_F32(bool mclkEn=true) : AudioStream_F32(2, inputQueueArray)	{ begin(mclkEn);} 
 	// Allow variable sample rate and block size:
-	AudioOutputI2S2_F32(const AudioSettings_F32 &settings) : AudioStream_F32(2, inputQueueArray)
+	AudioOutputI2S2_F32(const AudioSettings_F32 &settings, bool mclkEn=true) : AudioStream_F32(2, inputQueueArray)
 	{ 
 		sample_rate_Hz = settings.sample_rate_Hz;
 		audio_block_samples = settings.audio_block_samples;
-		begin(); 	
+		begin(mclkEn); 	
 	}
 	virtual void update(void);
-	void begin(void);
-	void begin(bool);
+	//void begin(void);
+	void begin(bool mclk_enable);
 	friend class AudioInputI2S2_F32;
 
 	friend class AudioOutputI2SQuad_F32;

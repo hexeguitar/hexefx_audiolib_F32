@@ -63,7 +63,7 @@ public:
         __enable_irq();
     }
     void setBypass(bool state) {bypass = state;}
-    void tglBypass(void) {bypass ^= 1;}
+    bool tglBypass(void) {bypass ^= 1; return bypass;}
     bool getBypass(void) { return bypass;}
 private:
     bool bypass;

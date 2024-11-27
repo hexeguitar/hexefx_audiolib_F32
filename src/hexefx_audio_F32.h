@@ -6,6 +6,7 @@
 #include "control_ES8388_F32.h"
 #include "control_AK4452_F32.h"
 #include "control_AK5552_F32.h"
+#include "control_AK4558_F32.h"
 
 #include "input_i2s_ext_F32.h"
 #include "output_i2s_ext_F32.h" // extended version
@@ -15,6 +16,7 @@
 #include "switch_selectorStereo_F32.h"
 
 #include "filter_ir_cabsim_F32.h"
+#include "filter_ir_cabsim_SD_F32.h"
 #include "filter_tonestackStereo_F32.h"
 #include "filter_equalizer_F32.h"
 #include "filter_3bandeq.h"

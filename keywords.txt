@@ -159,6 +159,48 @@ octave_get	KEYWORD2
 octave_set	KEYWORD2
 octave_tgl	KEYWORD2
 
+AudioFilterIRCabsim_F32	KEYWORD1
+ir_register	KEYWORD2
+ir_load	KEYWORD2
+ir_get	KEYWORD2
+ir_get_len_ms	KEYWORD2
+doubler_set	KEYWORD2
+doubler_tgl	KEYWORD2
+doubler_get	KEYWORD2
+
+AudioFilterIRCabsim_SD_F32	KEYWORD1
+ir_load_next	KEYWORD2
+ir_load_prev	KEYWORD2
+ir_load_first	KEYWORD2
+get_err_msg	KEYWORD2
+ir_get_name	KEYWORD2
+ir_get_idx	KEYWORD2
+ir_get_params	KEYWORD2
+input_gain	KEYWORD2
+init_done	KEYWORD2
+factory_reset	KEYWORD2
+get_ir_path	KEYWORD2
+get_conf_path	KEYWORD2
+sd_read_u16	KEYWORD2
+sd_read_u32	KEYWORD2
+sd_rd_sample16	KEYWORD2
+sd_rd_sample24	KEYWORD2
+parse_wav_header	KEYWORD2
+scan_ir_dir	KEYWORD2
+load_builtin_ir	KEYWORD2
+write_conf	KEYWORD2
+
+AudioFilterDCblockerStereo_F32	KEYWORD1
+
+
+AudioControlAK4452_F32	KEYWORD1
+AudioControlAK4558_F32	KEYWORD1
+DCblocker_en	KEYWORD2
+AudioControlAK5552_F32	KEYWORD1
+AudioControlES8388_F32	KEYWORD1
+AudioControlSGTL5000_F32	KEYWORD1
+AudioControlWM8731_F32	KEYWORD1
+
 
 memcpyInterleave_f32	KEYWORD2
 memcpyDeinterleave_f32	KEYWORD2

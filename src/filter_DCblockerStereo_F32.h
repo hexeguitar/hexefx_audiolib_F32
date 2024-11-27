@@ -48,7 +48,6 @@ public:
 		uint16_t i;
 		float32_t tmpf32;
 
-
 		if (bp) // handle bypass
 		{
 			blockL = AudioStream_F32::receiveReadOnly_f32(0);

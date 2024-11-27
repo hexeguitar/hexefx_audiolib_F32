@@ -28,7 +28,8 @@
 // ---------------------------- INFINITE PHASER MODULATION -----------------------
 #define INF_PHASER_STEP     (0x100000000u / INFINITE_PHASER_PATHS)
 
-AudioEffectInfinitePhaser_F32::AudioEffectInfinitePhaser_F32() : AudioStream_F32(1, inputQueueArray_f32)
+
+void AudioEffectInfinitePhaser_F32::begin(void)
 {
 	memset(allpass_x, 0, INFINITE_PHASER_STAGES * INFINITE_PHASER_PATHS * sizeof(float32_t));
 	memset(allpass_y, 0, INFINITE_PHASER_STAGES * INFINITE_PHASER_PATHS * sizeof(float32_t));
@@ -40,9 +41,6 @@ AudioEffectInfinitePhaser_F32::AudioEffectInfinitePhaser_F32() : AudioStream_F32
     feedb = 0.5f;              // effect is hard noticable with low feedback settings, hence the range is limited to 0.5-0.999
     mix_ratio = 0.5f;         // start with classic phaser sound 
     stg = INFINITE_PHASER_STAGES;
-}
-AudioEffectInfinitePhaser_F32::~AudioEffectInfinitePhaser_F32()
-{
 }
 
 void AudioEffectInfinitePhaser_F32::update()

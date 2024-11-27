@@ -1,6 +1,6 @@
 {
 	"name": "hexefx_audiolib_F32",
-	"version": "1.0.0",
+	"version": "1.3.0",
 	"keywords": "audio, dsp, teensy",
 	"description": "Audio effect extension for the OpenAudio_ArduinoLibrary",
 	"repository": {

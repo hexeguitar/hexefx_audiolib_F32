@@ -40,7 +40,7 @@ extern const uint16_t AudioWaveformHyperTri[];
 }
 // ---------------------------- /INTERNAL LFO ------------------------------------
 
-AudioEffectPhaserStereo_F32::AudioEffectPhaserStereo_F32() : AudioStream_F32(2, inputQueueArray_f32)
+AudioEffectPhaserStereo_F32::AudioEffectPhaserStereo_F32() : AudioStream_F32(3, inputQueueArray_f32)
 {
 	memset(allpass_x, 0, PHASER_STEREO_STAGES * sizeof(float32_t) * 2);
 	memset(allpass_y, 0, PHASER_STEREO_STAGES * sizeof(float32_t) * 2);

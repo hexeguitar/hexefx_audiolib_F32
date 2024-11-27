@@ -41,8 +41,15 @@
 class AudioEffectInfinitePhaser_F32 : public AudioStream_F32
 {
 public:
-    AudioEffectInfinitePhaser_F32();
-    ~AudioEffectInfinitePhaser_F32();
+    AudioEffectInfinitePhaser_F32() : AudioStream_F32(1, inputQueueArray_f32)
+	{
+		begin();
+	}
+	AudioEffectInfinitePhaser_F32(const AudioSettings_F32 &settings) : AudioStream_F32(1, inputQueueArray_f32)
+	{
+		begin();
+	}
+    ~AudioEffectInfinitePhaser_F32(){};
     virtual void update();
 /**
      * @brief Scale and offset the modulation signal. 
@@ -175,6 +182,8 @@ private:
     int32_t lfo_add;
     float32_t lfo_top;
     float32_t lfo_btm;
+
+	void begin(void);
 };
 
 #endif // _EFFECT_INFPHASER_H

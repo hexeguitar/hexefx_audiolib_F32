@@ -242,7 +242,6 @@ void AudioControlWM8731_F32::dac_mute(bool m)
 void AudioControlWM8731_F32::hp_filter(bool state)
 {
 	modify(WM8731_REG_DIGITAL, WM8731_BITS_ADCHPD(state^1), WM8731_BITS_ADCHPD_MASK);
-	//write(WM8731_REG_DIGITAL, WM8731_BITS_DACMU(DACmute) | WM8731_BITS_ADCHPD(state));
 }
 // ----------------------------------------------------------------------------------
 // Freeze the HP filter
@@ -340,7 +339,7 @@ bool AudioControlWM8731_F32::inputLevel(float n)
 	return true;
 }
 // ----------------------------------------------------------------------------------
-bool AudioControlWM8731_F32::inputLevelraw(uint8_t n)
+bool AudioControlWM8731_F32::inputLevelRaw(uint8_t n)
 {
 	// range is 0x00 (min) - 0x1F (max)
 	n = n > 0x1F ? 0x1F : n;

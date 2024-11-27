@@ -43,14 +43,24 @@ Slightly modified original equalizer component, added bypass system.
 Stereo guitar/bass cabinet emulator using low latency uniformly partitioned convolution.  
 10 cabinet impulse responses built in.  
 
+**AudioFilterIRCabsim_SD_F32**  
+Stereo guitar/bass cabinet emulator using low latency uniformly partitioned convolution.  
+Uses IR wav files (16/24bit 44.1kHz, up to 8K samples) stored on an SD card.  
+
 **AudioFilterEqualizer3band_F32**  
 Simple 3 band (Treble, Mid, Bass) equalizer.  
 
 **AudioEffectGainStereo_F32**  
-Stereo gain control (volume etc.)  
+Stereo gain control (volume, panorama)  
 
 **AudioSwitchSelectorStereo**  
-Stereo/mono signal selector.  
+Stereo/mono signal selector. Routes either L+R, L+L or R+R to the L+R outputs.  
+
+**AudioEffectXfaderStereo_F32**  
+Stereo crossfader for 2 input channels.  
+
+**AudioFilterDCblockerStereo_F32**
+IIR based DC blocking filter.  
 
 
 ## I/O  
@@ -62,6 +72,27 @@ Input and output for the I2S2 interface, Teensy 4.1 only.
 **AudioOutputI2S_ext_F32**  
 Custom input and output for the I2S interface, including a few extra options (ie. channel swap)  
 
+## Control  
+**AudioControlAK4452_F32**  
+AK4452 32bit DAC driver.  
+
+**AudioControlAK5552_F32**  
+AK5552 32bit ADC driver.  
+
+**AudioControlAK4558_F32**  
+AK4558 32bit codec driver.  
+
+**AudioControlES8388_F32**  
+ES8388 24bit codec driver.  
+
+**AudioControlSGTL5000_F32**
+SGTL5000 24bit codec driver, configurable I2C bus.  
+
+**AudioControlWM8731_F32**  
+WM8731 24bit codec driver, configurable I2C bus.  
+
+
+
 
 ## Basic  
 Single header basic building blocks for various DSP components:  
@@ -71,6 +102,7 @@ Single header basic building blocks for various DSP components:
 - delay line based pitch shifter  
 - shelving lowpass and hipass filter
 - lowpass filter  
+- stereo bypass system  
 
 ## Example projects  
 https://github.com/hexeguitar/hexefx_audiolib_F32_examples
