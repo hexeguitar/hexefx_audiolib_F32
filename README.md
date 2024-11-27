@@ -1,6 +1,6 @@
 # hexefx_audiolib_F32
 Audio effects library for Teensy4.x (extension to OpenAudio_ArduinoLibrary)  
-### [GUI available HERE](https://github.com/hexeguitar/hexefx_audiolib_F32/gui/index.html "hexefx_audiolib_F32 GUI")
+### [GUI available HERE](https://hexeguitar.github.io/hexefx_audiolib_F32/gui/index.html "hexefx_audiolib_F32 GUI")
 
 ## Effects  
 **AudioEffectInfinitePhaser_F32**  
