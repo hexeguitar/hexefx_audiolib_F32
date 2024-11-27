@@ -1,5 +1,6 @@
 # hexefx_audiolib_F32
 Audio effects library for Teensy4.x (extension to OpenAudio_ArduinoLibrary)  
+### [GUI available HERE](https://github.com/hexeguitar/hexefx_audiolib_F32/gui/index.html "hexefx_audiolib_F32 GUI")
 
 ## Effects  
 **AudioEffectInfinitePhaser_F32**  
@@ -50,6 +51,9 @@ Uses IR wav files (16/24bit 44.1kHz, up to 8K samples) stored on an SD card.
 **AudioFilterEqualizer3band_F32**  
 Simple 3 band (Treble, Mid, Bass) equalizer.  
 
+**AudioEffectCompressorStereo_F32**  
+Stereo compressor with bypass.  
+
 **AudioEffectGainStereo_F32**  
 Stereo gain control (volume, panorama)  
 
@@ -92,8 +96,6 @@ SGTL5000 24bit codec driver, configurable I2C bus.
 WM8731 24bit codec driver, configurable I2C bus.  
 
 
-
-
 ## Basic  
 Single header basic building blocks for various DSP components:  
 - allpass filter  
@@ -105,8 +107,8 @@ Single header basic building blocks for various DSP components:
 - stereo bypass system  
 
 ## Example projects  
-https://github.com/hexeguitar/hexefx_audiolib_F32_examples
-https://github.com/hexeguitar/tgx4
+* https://github.com/hexeguitar/hexefx_audiolib_F32_examples  
+* https://github.com/hexeguitar/tgx4
 
 ---  
 Copyright 07.2024 by Piotr Zapart  
