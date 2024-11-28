@@ -17,7 +17,6 @@
 #define _EFFECT_REVERBSC_F32_H_
 	
 #include <Arduino.h>
-#include "Audio.h"
 #include "AudioStream.h"
 #include "AudioStream_F32.h"
 #include "arm_math.h"

@@ -120,7 +120,7 @@ void AudioEffectPhaserStereo_F32::update()
         }
         else    // external modulation signal does not use modulation offset between LR 
         {
-            modSigL = ((float32_t)blockMod->data[i] + 32768.0f) / 65535.0f;    // mod signal is 0.0 to 1.0
+            modSigL = blockMod->data[i];   				 // mod signal is 0.0 to 1.0
             modSigR = modSigL;  
         }
         // apply scale/offset to the modulation wave
