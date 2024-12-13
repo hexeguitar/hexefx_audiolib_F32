@@ -60,6 +60,7 @@ AudioEffectReverbSc_F32::AudioEffectReverbSc_F32(bool use_psram) : AudioStream_F
 		aux_ = (float32_t *) extmem_malloc(aux_size_bytes);
 		#else
 			flags.mem_fail = 1;
+			flags.memsetup_done = 1; // nothing to setup, make it ready
 			initialised = true;
 			return;
 		#endif
@@ -67,7 +68,6 @@ AudioEffectReverbSc_F32::AudioEffectReverbSc_F32(bool use_psram) : AudioStream_F
 	else			
 	{
 		aux_ = (float32_t *) malloc(aux_size_bytes);
-		//flags.memsetup_done = 1; 
 	}
 	if (!aux_) 
 	{
@@ -173,7 +173,11 @@ void AudioEffectReverbSc_F32::update()
 	
 	if (!initialised) return;
 	// special case if memory allocation failed, pass the input signal directly to the output
-	if (flags.mem_fail) bp_mode = BYPASS_MODE_PASS;
+	if (flags.mem_fail) 
+	{
+		bp_mode = BYPASS_MODE_PASS;
+		flags.bypass = 1;
+	}
 	
 	blockL = AudioStream_F32::receiveWritable_f32(0);
 	blockR = AudioStream_F32::receiveWritable_f32(1);

@@ -23,13 +23,14 @@
 class AudioBasicDelay
 {
 public:
+	AudioBasicDelay() { bf = NULL; }
 	~AudioBasicDelay()
 	{
-		if(bf) free(bf);
+		free(bf);
 	}
 	bool init(uint32_t size_samples,  bool psram=false)
 	{
-		if(bf) free(bf);
+		free(bf);
 		use_psram = psram;
 		size = size_samples;
 		if (use_psram) 	bf = (float *)extmem_malloc(size * sizeof(float)); 	// allocate buffer in PSRAM

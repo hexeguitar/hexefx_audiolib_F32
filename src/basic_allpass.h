@@ -16,10 +16,8 @@ template <int N>
 class AudioFilterAllpass
 {
 public:
-	~AudioFilterAllpass()
-	{
-		if (bf) free(bf);
-	}
+	AudioFilterAllpass() { bf = NULL; }
+	~AudioFilterAllpass() {	free(bf); }
 	/**
 	 * @brief Allocate the filter buffer in RAM
 	 * 			set the pointer to the allpass coeff
@@ -28,6 +26,7 @@ public:
 	 */
 	bool init(float* coeffPtr)
 	{
+		free(bf);
 		bf = (float *)malloc(N*sizeof(float)); // allocate buffer
 		if (!bf) return false;
 		kPtr = coeffPtr;

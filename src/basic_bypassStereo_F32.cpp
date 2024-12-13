@@ -56,7 +56,7 @@ bool bypass_process(audio_block_f32_t** p_blockL, audio_block_f32_t** p_blockR, 
 				{
 					if (*p_blockL) 	AudioStream_F32::release(*p_blockL);					// blockL is available and contains audio. Discard it
 					result = false;
-					break;																	// and sigbnal failed operation
+					break;																	// and signal failed operation
 				}
 				memset(&(*p_blockR)->data[0], 0, (*p_blockR)->length*sizeof(float32_t));	
 			}

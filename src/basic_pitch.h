@@ -23,8 +23,11 @@ extern const float music_intevals[];		// semitone intervals -1oct to +2oct
 class AudioBasicPitch
 {
 public:
+	AudioBasicPitch() { bf = NULL; }
+	~AudioBasicPitch() { free(bf); }
 	bool init()
 	{
+		free(bf);
 		outFilter.init(hp_f, (float *)&hp_gain, lp_f, &lp_gain);
 		bf = (float *)malloc(BASIC_PITCH_BUF_SIZE*sizeof(float)); // allocate buffer
 		if (!bf) return false;

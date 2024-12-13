@@ -16,7 +16,7 @@ public:
 	AudioBasicTempBuffer_F32(const AudioSettings_F32 &settings) : AudioStream_F32(1, inputQueueArray_f32)
 	{
 		blockSize = settings.audio_block_samples;
-		memset(&data[0], 0, AUDIO_BLOCK_SAMPLES * sizeof(float32_t));
+		memset(&data[0], 0, blockSize * sizeof(float32_t));
 		dataPtr = &data[0];
 	};
 	~AudioBasicTempBuffer_F32(){};
@@ -30,7 +30,7 @@ public:
 	float32_t* dataPtr;
 private:
 	audio_block_f32_t *inputQueueArray_f32[1];
-	uint16_t blockSize = AUDIO_BLOCK_SAMPLES;
+	uint16_t blockSize;
 	float32_t data[AUDIO_BLOCK_SAMPLES];
 };
 
