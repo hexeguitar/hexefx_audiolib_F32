@@ -134,7 +134,11 @@ public:
 		bypass_set(flags.bypass^1);
         return flags.bypass;
     }
-
+	uint32_t getBfAddr()
+	{
+		float32_t *addr = aux_;
+		return (uint32_t)addr;
+	}
 private:
     struct flags_t
     {
