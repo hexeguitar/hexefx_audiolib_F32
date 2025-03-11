@@ -2,7 +2,7 @@
 #define _BASIC_PITCH_H_
 
 #include <Arduino.h>
-#include "Audio.h"
+#include "basic_shelvFilter.h"
 
 #define BASIC_PITCH_BUF_BITS 		(12)
 #define BASIC_PITCH_BUF_SIZE 		(1<<BASIC_PITCH_BUF_BITS)
