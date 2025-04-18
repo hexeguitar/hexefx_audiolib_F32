@@ -212,11 +212,18 @@ bool AudioControlWM8731_F32::enable(bit_depth_t bits, TwoWire *i2cBus, uint8_t a
 	}
 		
 	write(WM8731_REG_INTERFACE, WM8731_BITS_FORMAT(WM8731_FORMAT_I2S_MSB_LEFT) | 
-								WM8731_BITS_IWL(bits)); // I2S, x bit, MCLK slave
+								WM8731_BITS_IWL(bits) |
+								WM8731_BITS_LRP(0) |
+								WM8731_BITS_BCLKINV(0)
+		); // I2S, x bit, MCLK slave
 	
 	write(WM8731_REG_SAMPLING, 	WM8731_BITS_USB_NORMAL(0)	|	// normal mode
 								WM8731_BITS_BOSR(0)			|	// 256*fs
-								WM8731_BITS_SR(8)			|	// 44.1kHz
+#if AUDIO_SAMPLE_RATE_EXACT == 48000 || AUDIO_SAMPLE_RATE_EXACT == 96000 || AUDIO_SAMPLE_RATE_EXACT == 19200
+								WM8731_BITS_SR(0)			|	// n*48kHz
+#else
+								WM8731_BITS_SR(8)			|	// n*44.1kHz
+#endif
 								WM8731_BITS_CLKIDIV2(0)		|	// MCLK/1
 								WM8731_BITS_CLKODIV2(0));
 
@@ -333,18 +340,15 @@ bool AudioControlWM8731_F32::inputLevel(float n)
 {
 	// range is 0x00 (min) - 0x1F (max)
 	int _level = int(n * 31.f);
-	_level = _level > 0x1F ? 0x1F : _level;
-	write(WM8731_REG_LLINEIN, _level);
-	write(WM8731_REG_RLINEIN, _level);
-	return true;
+	return inputLevelRaw(_level);
 }
 // ----------------------------------------------------------------------------------
 bool AudioControlWM8731_F32::inputLevelRaw(uint8_t n)
 {
 	// range is 0x00 (min) - 0x1F (max)
-	n = n > 0x1F ? 0x1F : n;
-	write(WM8731_REG_LLINEIN, n);
-	write(WM8731_REG_RLINEIN, n);
+	n = min(n, 0x1F);
+	modify(WM8731_REG_LLINEIN, WM8731_BITS_LINVOL(n), WM8731_BITS_LINVOL_MASK);
+	modify(WM8731_REG_RLINEIN, WM8731_BITS_RINVOL(n), WM8731_BITS_RINVOL_MASK);
 	return true;
 }
 // ----------------------------------------------------------------------------------
