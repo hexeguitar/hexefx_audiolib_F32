@@ -211,21 +211,31 @@ bool AudioControlWM8731_F32::enable(bit_depth_t bits, TwoWire *i2cBus, uint8_t a
 		return false; // no WM8731 chip responding
 	}
 		
-	write(WM8731_REG_INTERFACE, WM8731_BITS_FORMAT(WM8731_FORMAT_I2S_MSB_LEFT) | 
-								WM8731_BITS_IWL(bits) |
-								WM8731_BITS_LRP(0) |
-								WM8731_BITS_BCLKINV(0)
-		); // I2S, x bit, MCLK slave
-	
-	write(WM8731_REG_SAMPLING, 	WM8731_BITS_USB_NORMAL(0)	|	// normal mode
-								WM8731_BITS_BOSR(0)			|	// 256*fs
-#if AUDIO_SAMPLE_RATE_EXACT == 48000 || AUDIO_SAMPLE_RATE_EXACT == 96000 || AUDIO_SAMPLE_RATE_EXACT == 19200
-								WM8731_BITS_SR(0)			|	// n*48kHz
-#else
-								WM8731_BITS_SR(8)			|	// n*44.1kHz
-#endif
-								WM8731_BITS_CLKIDIV2(0)		|	// MCLK/1
-								WM8731_BITS_CLKODIV2(0));
+	write(WM8731_REG_INTERFACE,
+		// I2S, x bit, MCLK slave
+		WM8731_BITS_FORMAT(WM8731_FORMAT_I2S_MSB_LEFT) |
+		WM8731_BITS_IWL(bits) |
+		WM8731_BITS_LRP(0) |
+		WM8731_BITS_BCLKINV(0)
+	);
+
+	write(WM8731_REG_SAMPLING,
+		WM8731_BITS_USB_NORMAL(0)	|	// normal mode
+		WM8731_BITS_BOSR(0)			|	// 256*fs
+	( (AUDIO_SAMPLE_RATE_EXACT == 48000 || AUDIO_SAMPLE_RATE_EXACT == 96000)
+		?
+		WM8731_BITS_SR(0)			// n*48kHz
+		:
+		WM8731_BITS_SR(8)			// n*44.1kHz
+	) |
+	( (AUDIO_SAMPLE_RATE_EXACT == 88200 || AUDIO_SAMPLE_RATE_EXACT == 96000)
+		?
+		WM8731_BITS_CLKIDIV2(1)		|	// MCLK/2
+		WM8731_BITS_CLKODIV2(1)
+		:
+		WM8731_BITS_CLKIDIV2(0)		|	// MCLK/1
+		WM8731_BITS_CLKODIV2(0)
+	);
 
 	write(WM8731_REG_DIGITAL, WM8731_BITS_DACMU(1)); 	// Soft mute DAC
 	write(WM8731_REG_ANALOG, 0x00);	 // disable all
@@ -369,11 +379,38 @@ bool AudioControlWM8731_F32_master::enable(bit_depth_t bits, TwoWire *i2cBus, ui
 	_wire->begin();
 	delay(5);
 	// write(WM8731_REG_RESET, 0);
-	write(WM8731_REG_INTERFACE, 
-			WM8731_BITS_FORMAT(WM8731_FORMAT_I2S_MSB_LEFT) | 
-			WM8731_BITS_IWL(bits)|
-			WM8731_BITS_MS(1)); 		// I2S, x bit, MCLK master
-	write(WM8731_REG_SAMPLING, 0x20);  // 256*Fs, 44.1 kHz, MCLK/1
+
+	write(WM8731_REG_INTERFACE, WM8731_BITS_FORMAT(WM8731_FORMAT_I2S_MSB_LEFT) |
+								WM8731_BITS_IWL(bits) |
+								WM8731_BITS_LRP(0) |
+								WM8731_BITS_BCLKINV(0) |
+								WM8731_BITS_MS(1)
+	); // I2S, x bit, MCLK master
+
+	write(WM8731_REG_SAMPLING,
+#if 1
+		WM8731_BITS_USB_NORMAL(0)	|	// normal mode
+		WM8731_BITS_BOSR(0)			|	// 256*fs
+#else
+	// Note, if the master clock runs at 12 MHz (as on the Audioinjector Zero card)
+	// we are in "USB mode"
+		WM8731_BITS_USB_NORMAL(1)	|	// USB mode
+		WM8731_BITS_BOSR(1)			|	// 250*fs
+#endif
+	( (AUDIO_SAMPLE_RATE_EXACT == 48000 || AUDIO_SAMPLE_RATE_EXACT == 96000)
+		?
+		WM8731_BITS_SR(0)			// n*48kHz
+		:
+		WM8731_BITS_SR(8)			// n*44.1kHz
+	) |
+	( (AUDIO_SAMPLE_RATE_EXACT == 88200 || AUDIO_SAMPLE_RATE_EXACT == 96000)
+		?
+		WM8731_BITS_CLKIDIV2(1)		|	// MCLK/2
+		WM8731_BITS_CLKODIV2(1)
+		:
+		WM8731_BITS_CLKIDIV2(0)		|	// MCLK/1
+		WM8731_BITS_CLKODIV2(0)
+	);
 
 	// In order to prevent pops, the DAC should first be soft-muted (DACMU),
 	// the output should then be de-selected from the line and headphone output
