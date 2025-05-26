@@ -84,7 +84,7 @@ void AudioEffectGuitarBooster_F32::update()
 		sampleWet -= (_hpPre2_reg += (sampleWet - _hpPre2_reg) * _hpPre2_k);
 		sampleWet *= _gain * _gain_hp;
 		// waveshaper
-		sampleWet = arm_linear_interp_f32(&waveshaper, sampleWet + DCbias) * -1.0f;
+		sampleWet = arm_linear_interp_f32(&waveshaper, sampleWet + DCbias);
 		// lowpass 
 		sampleWet = (_lp1_reg += (sampleWet - _lp1_reg) * _lp1_k);
 		sampleWet = (_lp2_reg += (sampleWet - _lp2_reg) * _lp2_k);    
